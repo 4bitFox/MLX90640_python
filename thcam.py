@@ -2,10 +2,10 @@
 import time,board,busio
 import numpy as np
 import adafruit_mlx90640
-import matplotlib.backend_managers as bmg
+#import matplotlib.backend_managers as bmg
 import matplotlib.pyplot as plt
-import datetime
-import keyboard
+#import datetime
+#import keyboard
 import os
 
 
@@ -28,12 +28,16 @@ SAVE_PREFIX = "THC_"
 SAVE_SUFFIX = ""
 SAVE_FILEFORMAT = "png"
 
-PRINT_FPS = True
+PRINT_FPS = False
 PRINT_SAVE = True
+PRINT_DEBUG = True
+PRINT_VALUEERROR = True
 
 
 
 #Init MLX
+if PRINT_DEBUG:
+    print("Initialize MLX90640")
 i2c = busio.I2C(board.SCL, board.SDA, frequency=800000) #I2C
 mlx = adafruit_mlx90640.MLX90640(i2c) #MLX90640
 mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ #1, 2, 4, 8, 16, 32, 64 HZ possible
@@ -42,6 +46,8 @@ MLX_SHAPE = (24, 32) #MLX resolution
 
 
 #Matplotlib
+if PRINT_DEBUG:
+    print("Starting Matplotlib")
 plt.ion() #Interactive plotting
 fig,ax = plt.subplots(figsize=(12, 7)) #Figures & Axes
 therm1 = ax.imshow(np.zeros(MLX_SHAPE), vmin=0, vmax=60, interpolation=interpolation) #start plot with zeros
@@ -72,7 +78,8 @@ t_array = []
 
 
 def datetime():
-    dt = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    dt = time.strftime("%Y-%m-%d_%H-%M-%S")
+    #dt = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     return dt
 
 def save():
@@ -84,26 +91,25 @@ def save():
 
 
 def loop():
-    print("Starting loop")
-    
+    if PRINT_DEBUG:
+        print("Starting loop")
     while True:
         t1 = time.monotonic()
-        
         try:
             mlx.getFrame(frame) #read MLX temperatures into frame var
             data_array = (np.reshape(frame, MLX_SHAPE)) #reshape to 24x32
             therm1.set_data(np.fliplr(data_array)) #flip left to right
             therm1.set_clim(vmin=np.min(data_array), vmax=np.max(data_array)) #set bounds
             cbar.update_normal(therm1) #update colorbar range
-            plt.title(f"Max Temp: {np.max(data_array):.1f} °C", color=color_fg)
+            plt.title(f"Max Temp: {np.max(data_array):.1f} °C    Avg Temp: {np.average(data_array):.1f} °C    Min Temp: {np.min(data_array):.1f} °C", color=color_fg)
             plt.pause(0.001) #required
             t_array.append(time.monotonic()-t1)
             
             if PRINT_FPS:
-                #os.system("clear")
                 print('Sample Rate: {0:2.1f}fps'.format(len(t_array)/np.sum(t_array)))
-                
         except ValueError:
+            if PRINT_VALUEERROR:
+                print("ValueError")
             continue # if error, just read again
 
 
