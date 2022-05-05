@@ -67,8 +67,8 @@ plt.yticks([]) #Hide yticks
 #Define temperature bar
 cbar = fig.colorbar(therm1) #Colorbar for temps
 cbar.ax.yaxis.set_tick_params(color=color_fg) #Tick color
-cbar.set_label('Temperature [$^{\circ}$C]', fontsize=14, color=color_fg) #Label
-plt.setp(plt.getp(cbar.ax.axes, 'yticklabels'), color=color_fg) #Tick labels
+cbar.set_label("Temperature [$^{\circ}$C]", fontsize=14, color=color_fg) #Label
+plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color=color_fg) #Tick labels
 
 
 
@@ -79,7 +79,7 @@ t_array = []
 
 def datetime():
     dt = time.strftime("%Y-%m-%d_%H-%M-%S")
-    #dt = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    #dt = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     return dt
 
 def save():
@@ -106,7 +106,7 @@ def loop():
             t_array.append(time.monotonic()-t1)
             
             if PRINT_FPS:
-                print('Sample Rate: {0:2.1f}fps'.format(len(t_array)/np.sum(t_array)))
+                print("Sample Rate: {0:2.1f}fps".format(len(t_array)/np.sum(t_array)))
         except ValueError:
             if PRINT_VALUEERROR:
                 print("ValueError")
