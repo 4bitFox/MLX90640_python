@@ -19,15 +19,17 @@ SPACE_L = 0.05
 SPACE_B = 0.025
 SPACE_R = 0.95
 SPACE_T = 0.95
+
 color_bg = "black"
 color_fg = "white"
 interpolation = "kaiser" #none, nearest, bilinear, bicubic, spline16, spline36, hanning, hamming, hermite, kaiser, quadric, catrom, gaussian, bessel, mitchell, sinc, lanczos
-print_fps = True
-print_save = True
 
 SAVE_PREFIX = "THC_"
 SAVE_SUFFIX = ""
 SAVE_FILEFORMAT = "png"
+
+PRINT_FPS = True
+PRINT_SAVE = True
 
 
 
@@ -76,7 +78,7 @@ def datetime():
 def save():
     filename = SAVE_PREFIX + datetime() + SAVE_SUFFIX + "." + SAVE_FILEFORMAT
     fig.savefig(filename)
-    if print_save:
+    if PRINT_SAVE:
         print(filename)
 
 
@@ -95,10 +97,9 @@ def loop():
             cbar.update_normal(therm1) #update colorbar range
             plt.title(f"Max Temp: {np.max(data_array):.1f} °C", color=color_fg)
             plt.pause(0.001) #required
-            #fig.savefig('mlx90640_test_fliplr.png',dpi=300,facecolor='#FCFCFC', bbox_inches='tight') #comment out to speed up
             t_array.append(time.monotonic()-t1)
             
-            if print_fps:
+            if PRINT_FPS:
                 #os.system("clear")
                 print('Sample Rate: {0:2.1f}fps'.format(len(t_array)/np.sum(t_array)))
                 
