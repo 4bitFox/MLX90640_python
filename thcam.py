@@ -37,6 +37,7 @@ interpolation = "kaiser" #none, nearest, bilinear, bicubic, spline16, spline36, 
 
 SAVE_PREFIX = "THC_"
 SAVE_SUFFIX = ""
+SAVE_PATH = "/home/pi/thcam"
 SAVE_FILEFORMAT = "png"
 
 PRINT_FPS = True
@@ -58,7 +59,7 @@ def trigger_callback(pin):
     save_img(False)
 
 GPIO.setup(GPIO_TRIGGER, GPIO.IN, pull_up_down=GPIO.PUD_UP) #Button
-GPIO.add_event_detect(GPIO_TRIGGER,GPIO.FALLING,callback=trigger_callback)
+GPIO.add_event_detect(GPIO_TRIGGER, GPIO.FALLING, callback=trigger_callback)
 
 
 
@@ -110,11 +111,11 @@ def datetime():
     return dt
 
 
-save_now = False
+save_now = False #Ewww!
 def save_img(action):
     global save_now
     if action:
-        filename = SAVE_PREFIX + datetime() + SAVE_SUFFIX + "." + SAVE_FILEFORMAT
+        filename = SAVE_PATH + "/" + SAVE_PREFIX + datetime() + SAVE_SUFFIX + "." + SAVE_FILEFORMAT
         plt.savefig(filename, format = SAVE_FILEFORMAT, facecolor = color_bg)
         if PRINT_SAVE:
             print("Saved " + filename)
