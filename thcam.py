@@ -1,6 +1,8 @@
 #!/bin/python3
-import time,board,busio
+import time, board, busio
+from time import sleep
 import numpy as np
+import RPi.GPIO as GPIO
 import adafruit_mlx90640
 #import matplotlib.backend_managers as bmg
 import matplotlib.pyplot as plt
@@ -17,6 +19,7 @@ temp_range_max = 300 #300 °C
 emissivity = 0.95
 EMISSIVITY_BASELINE = 1
 
+GPIO_TRIGGER = 12
 
 TITLE = "Thermal Camera"
 SCREEN_W = 800
@@ -45,6 +48,17 @@ PRINT_VALUEERROR = True
 
 #Calculate emissivity compensation
 e_comp = EMISSIVITY_BASELINE / emissivity
+
+
+
+#GPIO
+def trigger_callback(pin):
+    if PRINT_DEBUG:
+        print("GPIO " + str(pin) + " Button pressed.")
+    save_img(False)
+
+GPIO.setup(GPIO_TRIGGER, GPIO.IN, pull_up_down=GPIO.PUD_UP) #Button
+GPIO.add_event_detect(GPIO_TRIGGER,GPIO.FALLING,callback=trigger_callback)
 
 
 
@@ -95,56 +109,64 @@ def datetime():
     #dt = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     return dt
 
-def save():
-    filename = SAVE_PREFIX + datetime() + SAVE_SUFFIX + "." + SAVE_FILEFORMAT
-    fig.savefig(filename)
-    if PRINT_SAVE:
-        print(filename)
+
+save_now = False
+def save_img(action):
+    global save_now
+    if action:
+        filename = SAVE_PREFIX + datetime() + SAVE_SUFFIX + "." + SAVE_FILEFORMAT
+        plt.savefig(filename, format = SAVE_FILEFORMAT, facecolor = color_bg)
+        if PRINT_SAVE:
+            print("Saved " + filename)
+        save_now = False
+        sleep(1)
+    else:
+        save_now = True
+        
 
 
-
-def loop():
-    if PRINT_DEBUG:
-        print("Starting loop")
-    while True:
-        t1 = time.monotonic()
-        try:
-            mlx.getFrame(frame) #read MLX temperatures into frame var
-            data_array = frame
-            data_array *= e_comp
-            temp_min = np.min(data_array)
-            temp_max = np.max(data_array)
-            if temp_range:
-                data_array = np.clip(data_array, temp_range_min, temp_range_max) #Clip temps
-            data_array = np.reshape(data_array, MLX_SHAPE) #Reshape to 24x32
-            data_array = np.fliplr(data_array) #Flip left to right
+#Loop
+if PRINT_DEBUG:
+    print("Starting loop")
+while True:
+    t1 = time.monotonic()
+    try:
+        mlx.getFrame(frame) #read MLX temperatures into frame var
+        data_array = frame
+        data_array *= e_comp
+        temp_min = np.min(data_array)
+        temp_max = np.max(data_array)
+        if temp_range:
+            data_array = np.clip(data_array, temp_range_min, temp_range_max) #Clip temps
+        data_array = np.reshape(data_array, MLX_SHAPE) #Reshape to 24x32
+        data_array = np.fliplr(data_array) #Flip left to right
+        
+        therm1.set_data(data_array)
+        therm1.set_clim(vmin=np.min(data_array), vmax=np.max(data_array)) #set bounds
+        cbar.update_normal(therm1) #update colorbar range
+        
+        #Temp overview
+        if not temp_range or temp_min > temp_range_min and temp_max < temp_range_max:
+            plt.title(f"Max Temp: {np.max(data_array):.1f} °C    Avg Temp: {np.average(data_array):.1f} °C    Min Temp: {np.min(data_array):.1f} °C", color=color_fg)
+        elif temp_min < temp_range_min and temp_max < temp_range_max:
+            plt.title(f"Max Temp: {np.max(data_array):.1f} °C            *Min Temp: < {np.min(data_array):.1f} °C  ({temp_min:.1f} °C)", color=color_fg)
+        elif temp_min > temp_range_min and temp_max > temp_range_max:
+            plt.title(f"*Max Temp: > {np.max(data_array):.1f} °C  ({temp_max:.1f} °C)            Min Temp: {np.min(data_array):.1f} °C", color=color_fg)
+        elif temp_min < temp_range_min and temp_max > temp_range_max:
+            plt.title(f"*Max Temp: > {np.max(data_array):.1f} °C  ({temp_max:.1f} °C)        *Min Temp: < {np.min(data_array):.1f} °C  ({temp_min:.1f} °C)", color=color_fg)
             
-            therm1.set_data(data_array)
-            therm1.set_clim(vmin=np.min(data_array), vmax=np.max(data_array)) #set bounds
-            cbar.update_normal(therm1) #update colorbar range
+        plt.pause(0.001) #required
+        
+        if save_now:
+            save_img(True)
             
-            #Temp overview
-            if not temp_range or temp_min > temp_range_min and temp_max < temp_range_max:
-                plt.title(f"Max Temp: {np.max(data_array):.1f} °C    Avg Temp: {np.average(data_array):.1f} °C    Min Temp: {np.min(data_array):.1f} °C", color=color_fg)
-            elif temp_min < temp_range_min and temp_max < temp_range_max:
-                plt.title(f"Max Temp: {np.max(data_array):.1f} °C            *Min Temp: < {np.min(data_array):.1f} °C  ({temp_min:.1f} °C)", color=color_fg)
-            elif temp_min > temp_range_min and temp_max > temp_range_max:
-                plt.title(f"*Max Temp: > {np.max(data_array):.1f} °C  ({temp_max:.1f} °C)            Min Temp: {np.min(data_array):.1f} °C", color=color_fg)
-            elif temp_min < temp_range_min and temp_max > temp_range_max:
-                plt.title(f"*Max Temp: > {np.max(data_array):.1f} °C  ({temp_max:.1f} °C)        *Min Temp: < {np.min(data_array):.1f} °C  ({temp_min:.1f} °C)", color=color_fg)
-                
-            plt.pause(0.001) #required
-            t_array.append(time.monotonic()-t1)
+        t_array.append(time.monotonic()-t1)
+        
+        if PRINT_FPS:
+            print("Sample Rate: {0:2.1f}fps".format(len(t_array)/np.sum(t_array)))
             
-            if PRINT_FPS:
-                print("Sample Rate: {0:2.1f}fps".format(len(t_array)/np.sum(t_array)))
-                
-        except ValueError:
-            if PRINT_VALUEERROR:
-                print("ValueError")
-                
-            continue # if error, just read again
-
-
-
-loop()
+    except ValueError:
+        if PRINT_VALUEERROR:
+            print("ValueError")
+             
+        continue # if error, just read again
