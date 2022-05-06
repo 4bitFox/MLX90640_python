@@ -15,6 +15,7 @@ import os
 temp_range = True
 temp_range_min = 28 #-40 °C
 temp_range_max = 300 #300 °C
+test_pixels = False
 
 emissivity = 0.95
 EMISSIVITY_BASELINE = 1
@@ -40,13 +41,18 @@ SAVE_SUFFIX = ""
 SAVE_PATH = "/home/pi/thcam"
 SAVE_FILEFORMAT = "png"
 
-PRINT_FPS = False
+PRINT_FPS = True
 PRINT_SAVE = True
 PRINT_DEBUG = True
 PRINT_VALUEERROR = True
 
 
-pixels_monitor = [0, 0], [16, 12], [20, 5]
+def measurement_points(array):
+    #           Yt  Xl  Min Max
+    test(array,  0,  0, 30, 50)
+    test(array, 23,  0, 25, 35)
+
+
 
 #Calculate emissivity compensation
 e_comp = EMISSIVITY_BASELINE / emissivity
@@ -154,10 +160,8 @@ while True:
         data_array = np.reshape(data_array, MLX_SHAPE) #Reshape to 24x32
         data_array = np.fliplr(data_array) #Flip left to right
         
-        #                Yt Xl Min Max
-        test(data_array, 0, 0, 30, 50)
-        test(data_array, 23, 0, 25, 35)
-        
+        if test_pixels:
+            measurement_points(data_array)
         
         therm1.set_data(data_array)
         therm1.set_clim(vmin=np.min(data_array), vmax=np.max(data_array)) #set bounds
