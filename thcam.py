@@ -4,11 +4,8 @@ from time import sleep
 import numpy as np
 import RPi.GPIO as GPIO
 import adafruit_mlx90640
-#import matplotlib.backend_managers as bmg
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
-#import datetime
-#import keyboard
 import os
 
 
