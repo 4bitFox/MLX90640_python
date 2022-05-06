@@ -13,7 +13,7 @@ import os
 
 
 temp_range = True
-temp_range_min = 25 #-40 °C
+temp_range_min = 28 #-40 °C
 temp_range_max = 300 #300 °C
 
 emissivity = 0.95
@@ -40,12 +40,13 @@ SAVE_SUFFIX = ""
 SAVE_PATH = "/home/pi/thcam"
 SAVE_FILEFORMAT = "png"
 
-PRINT_FPS = True
+PRINT_FPS = False
 PRINT_SAVE = True
 PRINT_DEBUG = True
 PRINT_VALUEERROR = True
 
 
+pixels_monitor = [0, 0], [16, 12], [20, 5]
 
 #Calculate emissivity compensation
 e_comp = EMISSIVITY_BASELINE / emissivity
@@ -126,6 +127,17 @@ def save_img(action):
         
 
 
+def test(pixel, row, column, temp_min, temp_max):
+    
+    if pixel[row, column] > temp_min and pixel[row, column] < temp_max:
+        #fig.patch.set_facecolor(color_bg)
+        print("Pixel [" + str(row) + "][" + str(column) + "] ok.")
+        return True
+    else:
+        #fig.patch.set_facecolor("red")
+        print("Pixel [" + str(row) + "][" + str(column) + "] deviating! Should be " + str(temp_min) + " °C - " + str(temp_max) + " °C . Is " + str(round(pixel[row, column], 1)) + " °C!")
+        return False
+
 #Loop
 if PRINT_DEBUG:
     print("Starting loop")
@@ -141,6 +153,11 @@ while True:
             data_array = np.clip(data_array, temp_range_min, temp_range_max) #Clip temps
         data_array = np.reshape(data_array, MLX_SHAPE) #Reshape to 24x32
         data_array = np.fliplr(data_array) #Flip left to right
+        
+        #                Yt Xl Min Max
+        test(data_array, 0, 0, 30, 50)
+        test(data_array, 23, 0, 25, 35)
+        
         
         therm1.set_data(data_array)
         therm1.set_clim(vmin=np.min(data_array), vmax=np.max(data_array)) #set bounds
