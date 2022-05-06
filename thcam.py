@@ -9,6 +9,10 @@ import matplotlib.pyplot as plt
 import os
 
 
+temp_range = True
+temp_range_min = 25
+temp_range_max = 300
+
 
 TITLE = "Thermal Camera"
 SCREEN_W = 800
@@ -28,7 +32,7 @@ SAVE_PREFIX = "THC_"
 SAVE_SUFFIX = ""
 SAVE_FILEFORMAT = "png"
 
-PRINT_FPS = False
+PRINT_FPS = True
 PRINT_SAVE = True
 PRINT_DEBUG = True
 PRINT_VALUEERROR = True
@@ -97,11 +101,24 @@ def loop():
         t1 = time.monotonic()
         try:
             mlx.getFrame(frame) #read MLX temperatures into frame var
-            data_array = (np.reshape(frame, MLX_SHAPE)) #reshape to 24x32
-            therm1.set_data(np.fliplr(data_array)) #flip left to right
+            data_array = frame
+            temp_min = np.min(data_array)
+            temp_max = np.max(data_array)
+            if temp_range:
+                data_array = np.clip(data_array, temp_range_min, temp_range_max) #Clip temps
+            data_array = np.reshape(data_array, MLX_SHAPE) #Reshape to 24x32
+            data_array = np.fliplr(data_array) #Flip left to right
+            therm1.set_data(data_array)
             therm1.set_clim(vmin=np.min(data_array), vmax=np.max(data_array)) #set bounds
             cbar.update_normal(therm1) #update colorbar range
-            plt.title(f"Max Temp: {np.max(data_array):.1f} °C    Avg Temp: {np.average(data_array):.1f} °C    Min Temp: {np.min(data_array):.1f} °C", color=color_fg)
+            if not temp_range or temp_min > temp_range_min and temp_max < temp_range_max:
+                plt.title(f"Max Temp: {np.max(data_array):.1f} °C    Avg Temp: {np.average(data_array):.1f} °C    Min Temp: {np.min(data_array):.1f} °C", color=color_fg)
+            elif temp_min < temp_range_min and temp_max < temp_range_max:
+                plt.title(f"Max Temp: {np.max(data_array):.1f} °C            *Min Temp: < {np.min(data_array):.1f} °C  ({temp_min:.1f} °C)", color=color_fg)
+            elif temp_min > temp_range_min and temp_max > temp_range_max:
+                plt.title(f"*Max Temp: > {np.max(data_array):.1f} °C  ({temp_max:.1f} °C)            Min Temp: {np.min(data_array):.1f} °C", color=color_fg)
+            elif temp_min < temp_range_min and temp_max > temp_range_max:
+                plt.title(f"*Max Temp: > {np.max(data_array):.1f} °C  ({temp_max:.1f} °C)        *Min Temp: < {np.min(data_array):.1f} °C  ({temp_min:.1f} °C)", color=color_fg)
             plt.pause(0.001) #required
             t_array.append(time.monotonic()-t1)
             
