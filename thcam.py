@@ -6,15 +6,33 @@ import RPi.GPIO as GPIO
 import adafruit_mlx90640
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
+import configparser
 import os
+import sys
 
 
-temp_range = True
-temp_range_min = 28 #-40 °C
-temp_range_max = 300 #300 °C
-test_pixels = False
 
-emissivity = 0.95
+#Read config file
+try:
+    config_file = sys.argv[1]
+    config = configparser.ConfigParser()
+    config.read(config_file)
+    
+except IndexError:
+    print("Missing argument: No configuration file specified!")
+    print("Useage: python3 thcam.py /example/path/to/configfile.ini")
+    print("                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+    sys.exit(1)
+
+
+
+temp_range = config.get("Temperature_Range", "range_enable")
+temp_range_min = int(config.get("Temperature_Range", "range_min")) #-40 °C
+temp_range_max = int(config.get("Temperature_Range", "range_max")) #300 °C
+
+test_pixels = eval(config.get("Monitor", "monitor_pixels"))
+
+emissivity = float(config.get("Accuracy", "emissivity"))
 EMISSIVITY_BASELINE = 1
 
 GPIO_TRIGGER = 12
@@ -33,15 +51,17 @@ color_bg = "black"
 color_fg = "white"
 interpolation = "kaiser" #none, nearest, bilinear, bicubic, spline16, spline36, hanning, hamming, hermite, kaiser, quadric, catrom, gaussian, bessel, mitchell, sinc, lanczos
 
-SAVE_PREFIX = "THC_"
-SAVE_SUFFIX = ""
-SAVE_PATH = "/home/pi/thcam"
-SAVE_FILEFORMAT = "png"
+SAVE_PREFIX = str(config.get("Save", "save_prefix"))
+SAVE_SUFFIX = str(config.get("Save", "save_suffix"))
+SAVE_PATH = str(config.get("Save", "save_path"))
+SAVE_FILEFORMAT = str(config.get("Save", "save_format"))
 
 PRINT_FPS = True
 PRINT_SAVE = True
 PRINT_DEBUG = True
 PRINT_VALUEERROR = True
+
+
 
 
 def measurement_points(array):
