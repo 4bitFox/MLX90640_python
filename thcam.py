@@ -32,7 +32,7 @@ temp_range_max = int(config.get("Temperature_Range", "range_max")) #300 °C
 
 test_pixels = eval(config.get("Monitor", "monitor_pixels_enable"))
 test_array = eval(config.get("Monitor", "monitor_pixels_array"))
-test_array_rows = np.shape(test_array)[0] - 1
+test_array_rows = np.shape(test_array)[0]
 
 emissivity = float(config.get("Accuracy", "emissivity"))
 EMISSIVITY_BASELINE = 1
@@ -67,8 +67,8 @@ PRINT_VALUEERROR = True
 
 def measurement_points(data_array, test_array):
     #           Yt  Xl  Min Max
-    test(data_array,  test_array[0][0],  test_array[0][1], test_array[0][2], test_array[0][3])
-    test(data_array, 23,  0, 25, 35)
+    for row in range(test_array_rows):
+        test(data_array,  test_array[row][0],  test_array[row][1], test_array[row][2], test_array[row][3])
 
 
 
