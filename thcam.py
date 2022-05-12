@@ -30,7 +30,9 @@ temp_range = config.get("Temperature_Range", "range_enable")
 temp_range_min = int(config.get("Temperature_Range", "range_min")) #-40 °C
 temp_range_max = int(config.get("Temperature_Range", "range_max")) #300 °C
 
-test_pixels = eval(config.get("Monitor", "monitor_pixels"))
+test_pixels = eval(config.get("Monitor", "monitor_pixels_enable"))
+test_array = eval(config.get("Monitor", "monitor_pixels_array"))
+test_array_rows = np.shape(test_array)[0] - 1
 
 emissivity = float(config.get("Accuracy", "emissivity"))
 EMISSIVITY_BASELINE = 1
@@ -49,7 +51,7 @@ SPACE_T = 0.95
 
 color_bg = "black"
 color_fg = "white"
-interpolation = "kaiser" #none, nearest, bilinear, bicubic, spline16, spline36, hanning, hamming, hermite, kaiser, quadric, catrom, gaussian, bessel, mitchell, sinc, lanczos
+interpolation = "gaussian" #none, nearest, bilinear, bicubic, spline16, spline36, hanning, hamming, hermite, kaiser, quadric, catrom, gaussian, bessel, mitchell, sinc, lanczos
 
 SAVE_PREFIX = str(config.get("Save", "save_prefix"))
 SAVE_SUFFIX = str(config.get("Save", "save_suffix"))
@@ -63,11 +65,10 @@ PRINT_VALUEERROR = True
 
 
 
-
-def measurement_points(array):
+def measurement_points(data_array, test_array):
     #           Yt  Xl  Min Max
-    test(array,  0,  0, 30, 50)
-    test(array, 23,  0, 25, 35)
+    test(data_array,  test_array[0][0],  test_array[0][1], test_array[0][2], test_array[0][3])
+    test(data_array, 23,  0, 25, 35)
 
 
 
@@ -178,7 +179,7 @@ while True:
         data_array = np.fliplr(data_array) #Flip left to right
         
         if test_pixels:
-            measurement_points(data_array)
+            measurement_points(data_array, test_array)
         
         therm1.set_data(data_array)
         therm1.set_clim(vmin=np.min(data_array), vmax=np.max(data_array)) #set bounds
