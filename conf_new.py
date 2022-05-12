@@ -2,8 +2,15 @@
 import configparser
 import sys
 
+try:
+    config_file_name = sys.argv[1]
+except IndexError:
+    print("Missing argument: No name specified!")
+    print("Useage: python3 conf_new.py examplename")
+    print("                            ^^^^^^^^^^^")
+    sys.exit(1)
 
-config_file_name = sys.argv[1]
+
 #config_file_name = "default"
 config_file_path = "/home/pi/thcam/configs"
 config_file_format = "ini"
