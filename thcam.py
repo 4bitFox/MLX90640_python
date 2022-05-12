@@ -125,7 +125,7 @@ plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color=color_fg) #Tick labels
 
 
 
-frame = np.zeros((24*32, )) #setup array for storing all 768 temperatures
+frame = np.zeros((MLX_SHAPE[0]*MLX_SHAPE[1], )) #setup array for storing all 768 temperatures
 t_array = []
 
 
