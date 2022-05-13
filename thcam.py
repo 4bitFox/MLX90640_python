@@ -52,12 +52,12 @@ SPACE_T = 0.95
 color_bg = "black"
 color_fg = "white"
 color_temp_alarm = "red"
-interpolation = "gaussian" #none, nearest, bilinear, bicubic, spline16, spline36, hanning, hamming, hermite, kaiser, quadric, catrom, gaussian, bessel, mitchell, sinc, lanczos
+interpolation = str(config.get("View", "interpolation")) #none, nearest, bilinear, bicubic, spline16, spline36, hanning, hamming, hermite, kaiser, quadric, catrom, gaussian, bessel, mitchell, sinc, lanczos
 
 SAVE_PREFIX = str(config.get("Save", "save_prefix"))
 SAVE_SUFFIX = str(config.get("Save", "save_suffix"))
 SAVE_PATH = str(config.get("Save", "save_path"))
-SAVE_FILEFORMAT = str(config.get("Save", "save_format"))
+SAVE_FILEFORMAT = str(config.get("Save", "save_format")) #ps, eps, pdf, pgf, png, raw, rgba, svg, svgz, jpg, jpeg, tif, tiff
 
 PRINT_FPS = True
 PRINT_SAVE = True
