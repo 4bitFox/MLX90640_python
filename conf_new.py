@@ -20,6 +20,10 @@ config_file_format = "ini"
 config_file = configparser.ConfigParser()
 
 
+config_file.add_section("View")
+config_file.set("View", "interpolation", "gaussian")
+
+
 config_file.add_section("Accuracy")
 config_file.set("Accuracy", "emissivity", "0.95")
 
