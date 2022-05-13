@@ -51,6 +51,7 @@ SPACE_T = 0.95
 
 color_bg = "black"
 color_fg = "white"
+color_temp_alarm = "red"
 interpolation = "gaussian" #none, nearest, bilinear, bicubic, spline16, spline36, hanning, hamming, hermite, kaiser, quadric, catrom, gaussian, bessel, mitchell, sinc, lanczos
 
 SAVE_PREFIX = str(config.get("Save", "save_prefix"))
@@ -62,14 +63,33 @@ PRINT_FPS = True
 PRINT_SAVE = True
 PRINT_DEBUG = True
 PRINT_VALUEERROR = True
+PRINT_CLEAR = True
 
+
+alarm_state = False
+def temp_alarm(alarm):
+    global alarm_state
+    if alarm:
+        if not alarm_state:
+            fig.patch.set_facecolor(color_temp_alarm)
+            alarm_state = True
+    else:
+        if alarm_state:
+            fig.patch.set_facecolor(color_bg)
+            alarm_state = False
+    
 
 
 def measurement_points(data_array, test_array):
+    pixels_results = []
     #           Yt  Xl  Min Max
     for row in range(test_array_rows):
-        test(data_array,  test_array[row][0],  test_array[row][1], test_array[row][2], test_array[row][3])
-
+        pixel_tested = test(data_array,  test_array[row][0],  test_array[row][1], test_array[row][2], test_array[row][3])
+        pixels_results.append(pixel_tested)
+    if False in pixels_results:
+        temp_alarm(True)
+    else:
+        temp_alarm(False)
 
 
 #Calculate emissivity compensation
@@ -154,11 +174,9 @@ def save_img(action):
 def test(pixel, row, column, temp_min, temp_max):
     
     if pixel[row, column] > temp_min and pixel[row, column] < temp_max:
-        #fig.patch.set_facecolor(color_bg)
         print("Pixel [" + str(row) + "][" + str(column) + "] ok.")
         return True
     else:
-        #fig.patch.set_facecolor("red")
         print("Pixel [" + str(row) + "][" + str(column) + "] deviating! Should be " + str(temp_min) + " °C - " + str(temp_max) + " °C . Is " + str(round(pixel[row, column], 1)) + " °C!")
         return False
 
@@ -201,6 +219,9 @@ while True:
             save_img(True)
             
         t_array.append(time.monotonic()-t1)
+        
+        if PRINT_CLEAR:
+            os.system("clear")
         
         if PRINT_FPS:
             print("Sample Rate: {0:2.1f}fps".format(len(t_array)/np.sum(t_array)))
