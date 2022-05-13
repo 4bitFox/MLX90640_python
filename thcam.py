@@ -66,46 +66,11 @@ PRINT_VALUEERROR = True
 PRINT_CLEAR = True
 
 
-alarm_state = False
-def temp_alarm(alarm):
-    global alarm_state
-    if alarm:
-        if not alarm_state:
-            fig.patch.set_facecolor(color_temp_alarm)
-            alarm_state = True
-    else:
-        if alarm_state:
-            fig.patch.set_facecolor(color_bg)
-            alarm_state = False
-    
 
-
-def measurement_points(data_array, test_array):
-    pixels_results = []
-    #           Yt  Xl  Min Max
-    for row in range(test_array_rows):
-        pixel_tested = test(data_array,  test_array[row][0],  test_array[row][1], test_array[row][2], test_array[row][3])
-        pixels_results.append(pixel_tested)
-    if False in pixels_results:
-        temp_alarm(True)
-    else:
-        temp_alarm(False)
 
 
 #Calculate emissivity compensation
 e_comp = EMISSIVITY_BASELINE / emissivity
-
-
-
-#GPIO
-def trigger_callback(pin):
-    if PRINT_DEBUG:
-        print("GPIO " + str(pin) + " Button pressed.")
-    save_img(False)
-
-GPIO.setup(GPIO_TRIGGER, GPIO.IN, pull_up_down=GPIO.PUD_UP) #Button
-GPIO.add_event_detect(GPIO_TRIGGER, GPIO.FALLING, callback=trigger_callback)
-
 
 
 #Init MLX
@@ -115,7 +80,6 @@ i2c = busio.I2C(board.SCL, board.SDA, frequency=800000) #I2C
 mlx = adafruit_mlx90640.MLX90640(i2c) #MLX90640
 mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ #1, 2, 4, 8, 16, 32, 64 HZ possible
 MLX_SHAPE = (24, 32) #MLX resolution
-
 
 
 #Matplotlib
@@ -145,14 +109,21 @@ plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color=color_fg) #Tick labels
 
 
 
-frame = np.zeros((MLX_SHAPE[0]*MLX_SHAPE[1], )) #setup array for storing all 768 temperatures
-t_array = []
 
+
+
+#GPIO
+def trigger_callback(pin):
+    if PRINT_DEBUG:
+        print("GPIO " + str(pin) + " Button pressed.")
+    save_img(False)
+
+GPIO.setup(GPIO_TRIGGER, GPIO.IN, pull_up_down=GPIO.PUD_UP) #Button
+GPIO.add_event_detect(GPIO_TRIGGER, GPIO.FALLING, callback=trigger_callback)
 
 
 def datetime():
     dt = time.strftime("%Y-%m-%d_%H-%M-%S")
-    #dt = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     return dt
 
 
@@ -170,6 +141,30 @@ def save_img(action):
         save_now = True
         
 
+alarm_state = False
+def temp_alarm(alarm):
+    global alarm_state
+    if alarm:
+        if not alarm_state:
+            fig.patch.set_facecolor(color_temp_alarm)
+            alarm_state = True
+    else:
+        if alarm_state:
+            fig.patch.set_facecolor(color_bg)
+            alarm_state = False
+    
+
+def measurement_points(data_array, test_array):
+    pixels_results = []
+    #           Yt  Xl  Min Max
+    for row in range(test_array_rows):
+        pixel_tested = test(data_array,  test_array[row][0],  test_array[row][1], test_array[row][2], test_array[row][3])
+        pixels_results.append(pixel_tested)
+    if False in pixels_results:
+        temp_alarm(True)
+    else:
+        temp_alarm(False)
+
 
 def test(pixel, row, column, temp_min, temp_max):
     
@@ -180,9 +175,13 @@ def test(pixel, row, column, temp_min, temp_max):
         print("Pixel [" + str(row) + "][" + str(column) + "] deviating! Should be " + str(temp_min) + " °C - " + str(temp_max) + " °C . Is " + str(round(pixel[row, column], 1)) + " °C!")
         return False
 
+
 #Loop
 if PRINT_DEBUG:
     print("Starting loop")
+    
+frame = np.zeros((MLX_SHAPE[0]*MLX_SHAPE[1], )) #setup array for storing all 768 temperatures
+t_array = []
 while True:
     t1 = time.monotonic()
     try:
