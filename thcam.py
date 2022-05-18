@@ -38,6 +38,7 @@ emissivity = float(config.get("Accuracy", "emissivity"))
 EMISSIVITY_BASELINE = 1
 
 GPIO_TRIGGER = 12
+GPIO_BUZZER = 13
 
 TITLE = "Thermal Camera"
 SCREEN_W = 800
@@ -112,7 +113,7 @@ plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color=color_fg) #Tick labels
 
 
 
-#GPIO
+#GPIO capture button
 def trigger_callback(pin):
     if PRINT_DEBUG:
         print("GPIO " + str(pin) + " Button pressed.")
@@ -120,6 +121,15 @@ def trigger_callback(pin):
 
 GPIO.setup(GPIO_TRIGGER, GPIO.IN, pull_up_down=GPIO.PUD_UP) #Button
 GPIO.add_event_detect(GPIO_TRIGGER, GPIO.FALLING, callback=trigger_callback)
+
+
+#GPIO PWM buzzer
+GPIO.setup(GPIO_BUZZER, GPIO.OUT)
+def buzz(freq, time):
+    buzzer = GPIO.PWM(GPIO_BUZZER, freq)
+    buzzer.start(50) #Start with 50% duty cycle
+    sleep(time)
+    buzzer.stop()
 
 
 def datetime():
@@ -147,6 +157,7 @@ def temp_alarm(alarm):
     if alarm:
         if not alarm_state:
             fig.patch.set_facecolor(color_temp_alarm)
+            buzz(600, 5)
             alarm_state = True
     else:
         if alarm_state:
