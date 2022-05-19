@@ -18,3 +18,12 @@ Features:
   - Display turns red if temperatures are not in the tolerance.
   - Sound a buzzer
 - Interpolation of image
+
+
+Modules required:
+- adafruit-circuitpython-mlx90640
+- adafruit-blinka
+- RPI.GPIO
+- numpy
+- matplotlib
+- configparser
