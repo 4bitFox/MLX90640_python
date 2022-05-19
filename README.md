@@ -17,3 +17,4 @@ Features:
 - Monitor specific pixels.
   - Display turns red if temperatures are not in the tolerance.
   - Sound a buzzer
+- Interpolation of image
