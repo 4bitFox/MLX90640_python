@@ -25,7 +25,7 @@ Features:
 - Interpolation of image
 
 
-Modules required:
+Modules required (pip3 install):
 - adafruit-circuitpython-mlx90640
 - adafruit-blinka
 - RPI.GPIO
