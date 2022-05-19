@@ -8,9 +8,7 @@ Can be used as a thermal imager or even for monitoring.
 
 
 Inherited initial code from here:
-
-Hrisko, J. (2020). High Resolution Thermal Camera with Raspberry Pi and MLX90640. Maker Portal. 
-https://makersportal.com/blog/2020/6/8/high-resolution-thermal-camera-with-raspberry-pi-and-mlx90640
+https://gist.github.com/justinmklam/090d92011c6b7c9510f86b4cb667be92
 
 
 Code now:
