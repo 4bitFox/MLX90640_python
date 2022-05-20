@@ -31,6 +31,7 @@ temp_range_min = int(config.get("Temperature_Range", "range_min")) #-40 °C
 temp_range_max = int(config.get("Temperature_Range", "range_max")) #300 °C
 
 test_pixels = eval(config.get("Monitor", "monitor_pixels_enable"))
+test_buzzer = eval(config.get("Monitor", "monitor_buzzer_enable"))
 test_array = eval(config.get("Monitor", "monitor_pixels_array"))
 test_array_rows = np.shape(test_array)[0]
 
@@ -111,13 +112,16 @@ plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color=color_fg) #Tick labels
 
 
 
-
+save_now = False #Ewww!
+def save():
+    global save_now
+    save_now = True
 
 #GPIO capture button
 def trigger_callback(pin):
+    save()
     if PRINT_DEBUG:
         print("GPIO " + str(pin) + " Button pressed.")
-    save_img(False)
 
 GPIO.setup(GPIO_TRIGGER, GPIO.IN, pull_up_down=GPIO.PUD_UP) #Button
 GPIO.add_event_detect(GPIO_TRIGGER, GPIO.FALLING, callback=trigger_callback)
@@ -135,20 +139,6 @@ def buzz(freq, time):
 def datetime():
     dt = time.strftime("%Y-%m-%d_%H-%M-%S")
     return dt
-
-
-save_now = False #Ewww!
-def save_img(action):
-    global save_now
-    if action:
-        filename = SAVE_PATH + "/" + SAVE_PREFIX + datetime() + SAVE_SUFFIX + "." + SAVE_FILEFORMAT
-        plt.savefig(filename, format = SAVE_FILEFORMAT, facecolor = color_bg)
-        if PRINT_SAVE:
-            print("Saved " + filename)
-        save_now = False
-        sleep(1)
-    else:
-        save_now = True
         
 
 alarm_state = False
@@ -157,7 +147,8 @@ def temp_alarm(alarm):
     if alarm:
         if not alarm_state:
             fig.patch.set_facecolor(color_temp_alarm)
-            buzz(600, 5)
+            if test_buzzer == True:
+                buzz(600, 5)
             alarm_state = True
     else:
         if alarm_state:
@@ -226,7 +217,12 @@ while True:
         plt.pause(0.001) #required
         
         if save_now:
-            save_img(True)
+            filename = SAVE_PATH + "/" + SAVE_PREFIX + datetime() + SAVE_SUFFIX + "." + SAVE_FILEFORMAT
+            plt.savefig(filename, format = SAVE_FILEFORMAT, facecolor = color_bg)
+            if PRINT_SAVE:
+                print("Saved " + filename)
+            save_now = False
+            sleep(1)
             
         t_array.append(time.monotonic()-t1)
         
