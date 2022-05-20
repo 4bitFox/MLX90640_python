@@ -7,13 +7,8 @@ Is a work in progress, but has basic functionality.
 Can be used as a thermal imager or even for monitoring.
 
 
-Inherited initial code from here:
+Inherited initial code from Justin Lam:
 https://gist.github.com/justinmklam/090d92011c6b7c9510f86b4cb667be92
-
-
-Code now:
-https://github.com/4bitFox/MLX90640_python/blob/main/thcam.py
-
 
 Features:
 - Save picture
