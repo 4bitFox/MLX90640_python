@@ -192,7 +192,18 @@ def test(pixel, row, column, temp_min, temp_max):
 def update_view(array):
         therm1.set_data(array)
         therm1.set_clim(vmin=np.min(array), vmax=np.max(array)) #set bounds
+        
         cbar.update_normal(therm1) #update colorbar range
+        
+        if not temp_range or temp_min > temp_range_min and temp_max < temp_range_max:
+            plt.title(f"Max Temp: {np.max(data_array):.1f} °C    Avg Temp: {np.average(data_array):.1f} °C    Min Temp: {np.min(data_array):.1f} °C", color=color_fg)
+        elif temp_min < temp_range_min and temp_max < temp_range_max:
+            plt.title(f"Max Temp: {np.max(data_array):.1f} °C            *Min Temp: < {np.min(data_array):.1f} °C  ({temp_min:.1f} °C)", color=color_fg)
+        elif temp_min > temp_range_min and temp_max > temp_range_max:
+            plt.title(f"*Max Temp: > {np.max(data_array):.1f} °C  ({temp_max:.1f} °C)            Min Temp: {np.min(data_array):.1f} °C", color=color_fg)
+        elif temp_min < temp_range_min and temp_max > temp_range_max:
+            plt.title(f"*Max Temp: > {np.max(data_array):.1f} °C  ({temp_max:.1f} °C)        *Min Temp: < {np.min(data_array):.1f} °C  ({temp_min:.1f} °C)", color=color_fg)
+        
         plt.pause(0.001) #required
 
 
@@ -218,32 +229,11 @@ while True:
         
         if test_pixels:
             measurement_points(data_array, test_array)
-        
-        #therm1.set_data(data_array)
-        #therm1.set_clim(vmin=np.min(data_array), vmax=np.max(data_array)) #set bounds
-        #cbar.update_normal(therm1) #update colorbar range
+
         update_view(data_array)
-        
-        #Temp overview
-        if not temp_range or temp_min > temp_range_min and temp_max < temp_range_max:
-            plt.title(f"Max Temp: {np.max(data_array):.1f} °C    Avg Temp: {np.average(data_array):.1f} °C    Min Temp: {np.min(data_array):.1f} °C", color=color_fg)
-        elif temp_min < temp_range_min and temp_max < temp_range_max:
-            plt.title(f"Max Temp: {np.max(data_array):.1f} °C            *Min Temp: < {np.min(data_array):.1f} °C  ({temp_min:.1f} °C)", color=color_fg)
-        elif temp_min > temp_range_min and temp_max > temp_range_max:
-            plt.title(f"*Max Temp: > {np.max(data_array):.1f} °C  ({temp_max:.1f} °C)            Min Temp: {np.min(data_array):.1f} °C", color=color_fg)
-        elif temp_min < temp_range_min and temp_max > temp_range_max:
-            plt.title(f"*Max Temp: > {np.max(data_array):.1f} °C  ({temp_max:.1f} °C)        *Min Temp: < {np.min(data_array):.1f} °C  ({temp_min:.1f} °C)", color=color_fg)
-            
-        #plt.pause(0.001) #required
         
         if save_queued:
             save_now()
-            #filename = SAVE_PATH + "/" + SAVE_PREFIX + datetime() + SAVE_SUFFIX + "." + SAVE_FILEFORMAT
-            #plt.savefig(filename, format = SAVE_FILEFORMAT, facecolor = color_bg)
-            #if PRINT_SAVE:
-            #    print("Saved " + filename)
-            #save_queued = False
-            #sleep(1)
             
         t_array.append(time.monotonic()-t1)
         
