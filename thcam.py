@@ -180,6 +180,12 @@ def test(pixel, row, column, temp_min, temp_max):
         return False
 
 
+def update_view(array):
+        therm1.set_data(array)
+        therm1.set_clim(vmin=np.min(array), vmax=np.max(array)) #set bounds
+        cbar.update_normal(therm1) #update colorbar range
+        plt.pause(0.001) #required
+
 
 #Loop
 if PRINT_DEBUG:
@@ -204,9 +210,10 @@ while True:
         if test_pixels:
             measurement_points(data_array, test_array)
         
-        therm1.set_data(data_array)
-        therm1.set_clim(vmin=np.min(data_array), vmax=np.max(data_array)) #set bounds
-        cbar.update_normal(therm1) #update colorbar range
+        #therm1.set_data(data_array)
+        #therm1.set_clim(vmin=np.min(data_array), vmax=np.max(data_array)) #set bounds
+        #cbar.update_normal(therm1) #update colorbar range
+        update_view(data_array)
         
         #Temp overview
         if not temp_range or temp_min > temp_range_min and temp_max < temp_range_max:
@@ -218,7 +225,7 @@ while True:
         elif temp_min < temp_range_min and temp_max > temp_range_max:
             plt.title(f"*Max Temp: > {np.max(data_array):.1f} °C  ({temp_max:.1f} °C)        *Min Temp: < {np.min(data_array):.1f} °C  ({temp_min:.1f} °C)", color=color_fg)
             
-        plt.pause(0.001) #required
+        #plt.pause(0.001) #required
         
         if save_now:
             filename = SAVE_PATH + "/" + SAVE_PREFIX + datetime() + SAVE_SUFFIX + "." + SAVE_FILEFORMAT
@@ -235,7 +242,8 @@ while True:
             if len(data_array_keep) > frames_keep_amount:
                 data_array_keep.pop(0)
             print("Keeping frames: " + str(len(data_array_keep)))
-            data_array_prev = data_array_keep[0]
+            
+            update_view(data_array_keep[0])
         
         if PRINT_CLEAR:
             os.system("clear")
