@@ -73,7 +73,7 @@ PRINT_CLEAR = True
 
 #Calculate emissivity compensation
 e_comp = EMISSIVITY_BASELINE / emissivity
-
+SENSOR_SHAPE = (24, 32) #resolution
 
 #Init MLX
 if PRINT_DEBUG:
@@ -81,7 +81,6 @@ if PRINT_DEBUG:
 i2c = busio.I2C(board.SCL, board.SDA, frequency=800000) #I2C
 mlx = adafruit_mlx90640.MLX90640(i2c) #MLX90640
 mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ #1, 2, 4, 8, 16, 32, 64 HZ possible
-MLX_SHAPE = (24, 32) #MLX resolution
 
 
 #Matplotlib
@@ -89,7 +88,7 @@ if PRINT_DEBUG:
     print("Starting Matplotlib")
 plt.ion() #Interactive plotting
 fig,ax = plt.subplots(figsize=(12, 7)) #Figures & Axes
-therm1 = ax.imshow(np.zeros(MLX_SHAPE), vmin=0, vmax=60, interpolation=interpolation) #start plot with zeros
+therm1 = ax.imshow(np.zeros(SENSOR_SHAPE), vmin=0, vmax=60, interpolation=interpolation) #start plot with zeros
 
 fig.canvas.manager.set_window_title(TITLE) #Window title
 fig.canvas.manager.window.move(WINDOW_POS_X, WINDOW_POS_Y) #Move window
@@ -112,7 +111,7 @@ plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color=color_fg) #Tick labels
 
 
 
-save_now = False #Ewww!
+save_now = False
 def save():
     global save_now
     save_now = True
@@ -178,11 +177,12 @@ def test(pixel, row, column, temp_min, temp_max):
         return False
 
 
+
 #Loop
 if PRINT_DEBUG:
     print("Starting loop")
     
-frame = np.zeros((MLX_SHAPE[0]*MLX_SHAPE[1], )) #setup array for storing all 768 temperatures
+frame = np.zeros((SENSOR_SHAPE[0]*SENSOR_SHAPE[1], )) #setup array for storing all 768 temperatures
 t_array = []
 while True:
     t1 = time.monotonic()
@@ -194,7 +194,7 @@ while True:
         temp_max = np.max(data_array)
         if temp_range:
             data_array = np.clip(data_array, temp_range_min, temp_range_max) #Clip temps
-        data_array = np.reshape(data_array, MLX_SHAPE) #Reshape to 24x32
+        data_array = np.reshape(data_array, SENSOR_SHAPE) #Reshape to 24x32
         data_array = np.fliplr(data_array) #Flip left to right
         
         if test_pixels:
