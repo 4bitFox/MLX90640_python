@@ -33,7 +33,9 @@ temp_range_max = int(config.get("Temperature_Range", "range_max")) #300 °C
 test_pixels = eval(config.get("Monitor", "monitor_pixels_enable"))
 test_buzzer = eval(config.get("Monitor", "monitor_buzzer_enable"))
 test_array = eval(config.get("Monitor", "monitor_pixels_array"))
-test_array_rows = np.shape(test_array)[0]
+
+frames_keep = True
+frames_keep_amount = 5
 
 emissivity = float(config.get("Accuracy", "emissivity"))
 EMISSIVITY_BASELINE = 1
@@ -65,7 +67,7 @@ PRINT_FPS = True
 PRINT_SAVE = True
 PRINT_DEBUG = True
 PRINT_VALUEERROR = True
-PRINT_CLEAR = True
+PRINT_CLEAR = False
 
 
 
@@ -73,6 +75,7 @@ PRINT_CLEAR = True
 
 #Calculate emissivity compensation
 e_comp = EMISSIVITY_BASELINE / emissivity
+test_array_rows = np.shape(test_array)[0]
 SENSOR_SHAPE = (24, 32) #resolution
 
 #Init MLX
@@ -184,6 +187,7 @@ if PRINT_DEBUG:
     
 frame = np.zeros((SENSOR_SHAPE[0]*SENSOR_SHAPE[1], )) #setup array for storing all 768 temperatures
 t_array = []
+data_array_keep = []
 while True:
     t1 = time.monotonic()
     try:
@@ -225,6 +229,13 @@ while True:
             sleep(1)
             
         t_array.append(time.monotonic()-t1)
+        
+        if frames_keep:
+            data_array_keep.append(data_array)
+            if len(data_array_keep) > frames_keep_amount:
+                data_array_keep.pop(0)
+            print("Keeping frames: " + str(len(data_array_keep)))
+            data_array_prev = data_array_keep[0]
         
         if PRINT_CLEAR:
             os.system("clear")
