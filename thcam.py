@@ -114,14 +114,23 @@ plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color=color_fg) #Tick labels
 
 
 
-save_now = False
-def save():
-    global save_now
-    save_now = True
+save_queued = False
+def save_queue():
+    global save_queued
+    save_queued = True
+    
+def save_now():
+    global save_queued
+    filename = SAVE_PATH + "/" + SAVE_PREFIX + datetime() + SAVE_SUFFIX + "." + SAVE_FILEFORMAT
+    plt.savefig(filename, format = SAVE_FILEFORMAT, facecolor = color_bg)
+    if PRINT_SAVE:
+        print("Saved " + filename)
+    save_queued = False
+    sleep(1)
 
 #GPIO capture button
 def trigger_callback(pin):
-    save()
+    save_queue()
     if PRINT_DEBUG:
         print("GPIO " + str(pin) + " Button pressed.")
 
@@ -227,13 +236,14 @@ while True:
             
         #plt.pause(0.001) #required
         
-        if save_now:
-            filename = SAVE_PATH + "/" + SAVE_PREFIX + datetime() + SAVE_SUFFIX + "." + SAVE_FILEFORMAT
-            plt.savefig(filename, format = SAVE_FILEFORMAT, facecolor = color_bg)
-            if PRINT_SAVE:
-                print("Saved " + filename)
-            save_now = False
-            sleep(1)
+        if save_queued:
+            save_now()
+            #filename = SAVE_PATH + "/" + SAVE_PREFIX + datetime() + SAVE_SUFFIX + "." + SAVE_FILEFORMAT
+            #plt.savefig(filename, format = SAVE_FILEFORMAT, facecolor = color_bg)
+            #if PRINT_SAVE:
+            #    print("Saved " + filename)
+            #save_queued = False
+            #sleep(1)
             
         t_array.append(time.monotonic()-t1)
         
