@@ -56,6 +56,7 @@ SPACE_T = 0.95
 color_bg = "black"
 color_fg = "white"
 color_temp_alarm = "red"
+color_pixel_trigger = "yellow"
 interpolation = str(config.get("View", "interpolation")) #none, nearest, bilinear, bicubic, spline16, spline36, hanning, hamming, hermite, kaiser, quadric, catrom, gaussian, bessel, mitchell, sinc, lanczos
 
 SAVE_PREFIX = str(config.get("Save", "save_prefix"))
@@ -65,6 +66,7 @@ SAVE_FILEFORMAT = str(config.get("Save", "save_format")) #ps, eps, pdf, pgf, png
 
 PRINT_FPS = True
 PRINT_SAVE = True
+PRINT_PIXEL_TEST = False
 PRINT_DEBUG = True
 PRINT_VALUEERROR = True
 PRINT_CLEAR = False
@@ -175,25 +177,27 @@ def temp_alarm(alarm):
             alarm_state = False
     
 
-def measurement_points(data_array, test_array):
+def measurement_points(data_array, test_array): #If all pixels in range return True
     pixels_results = []
     #           Yt  Xl  Min Max
     for row in range(test_array_rows):
         pixel_tested = test(data_array,  test_array[row][0],  test_array[row][1], test_array[row][2], test_array[row][3])
         pixels_results.append(pixel_tested)
     if False in pixels_results:
-        temp_alarm(True)
+        return False
     else:
-        temp_alarm(False)
+        return True
 
 
 def test(pixel, row, column, temp_min, temp_max):
     
     if pixel[row, column] > temp_min and pixel[row, column] < temp_max:
-        print("Pixel [" + str(row) + "][" + str(column) + "] ok.")
+        if PRINT_PIXEL_TEST:
+            print("Pixel [" + str(row) + "][" + str(column) + "] ok.")
         return True
     else:
-        print("Pixel [" + str(row) + "][" + str(column) + "] deviating! Should be " + str(temp_min) + " °C - " + str(temp_max) + " °C . Is " + str(round(pixel[row, column], 1)) + " °C!")
+        if PRINT_PIXEL_TEST:
+            print("Pixel [" + str(row) + "][" + str(column) + "] deviating! Should be " + str(temp_min) + " °C - " + str(temp_max) + " °C . Is " + str(round(pixel[row, column], 1)) + " °C!")
         return False
 
 
@@ -214,6 +218,10 @@ def update_view(array):
         
         plt.pause(0.001) #required
 
+
+pixel_trigger_prev = True ####TEST#########################################
+pixel_trigger_prev_array = [[0, 0, 10, 50], [0, 31, 10, 50], [23, 0, 35, 50], [23, 31, 10, 50], [11, 15, 10, 50]]
+pixel_triggered_prev = False
 
 #Loop
 if PRINT_DEBUG:
@@ -236,7 +244,8 @@ while True:
         data_array = np.fliplr(data_array) #Flip left to right
         
         if test_pixels:
-            measurement_points(data_array, test_array)
+            temp_alarm(not measurement_points(data_array, test_array))
+                
 
         update_view(data_array)
         
@@ -245,16 +254,28 @@ while True:
             color_theme(color_bg, color_fg)
             update_view(data_array)
             color_theme(color_fg, color_bg)
-            
-        #t_array.append(time.monotonic()-t1)
+        
         
         if frames_keep:
             data_array_keep.append(data_array)
-            if len(data_array_keep) > frames_keep_amount:
+            if len(data_array_keep) > frames_keep_amount + 1:
                 data_array_keep.pop(0)
-            print("Keeping frames: " + str(len(data_array_keep)))
             
-            #update_view(data_array_keep[0])
+        if pixel_trigger_prev: ####TEST#################
+            if measurement_points(data_array, pixel_trigger_prev_array):
+                if not pixel_triggered_prev:
+                    if PRINT_SAVE:
+                        print("Automatically saving previous picture...")
+                    pixel_triggered_prev = True
+                    update_view(data_array_keep[0])
+                    save_now()
+                    color_theme(color_bg, color_pixel_trigger)
+                    update_view(data_array)
+                    color_theme(color_fg, color_bg)
+            else:
+                if pixel_triggered_prev:
+                    pixel_triggered_prev = False
+                    
         
         if PRINT_CLEAR:
             os.system("clear")
