@@ -100,18 +100,26 @@ fig.canvas.manager.toolbar.hide() #Hide toolbar
 fig.subplots_adjust(left=SPACE_L, bottom=SPACE_B, right=SPACE_R, top=SPACE_T) #Adjust space to border
 #fig.canvas.manager.full_screen_toggle() #Fullscreen
 
-fig.patch.set_facecolor(color_bg) #Background color
+#fig.patch.set_facecolor(color_bg) #Background color
 
 plt.xticks([]) #Hide xticks
 plt.yticks([]) #Hide yticks
 
 #Define temperature bar
 cbar = fig.colorbar(therm1) #Colorbar for temps
-cbar.ax.yaxis.set_tick_params(color=color_fg) #Tick color
-cbar.set_label("Temperature [$^{\circ}$C]", fontsize=14, color=color_fg) #Label
-plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color=color_fg) #Tick labels
+#cbar.ax.yaxis.set_tick_params(color=color_fg) #Tick color
+#cbar.set_label("Temperature [$^{\circ}$C]", fontsize=14, color=color_fg) #Label
+#plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color=color_fg) #Tick labels
 
 
+def color_theme(fg, bg):
+    fig.patch.set_facecolor(bg) #Background color
+    
+    cbar.ax.yaxis.set_tick_params(color = fg) #Tick color
+    cbar.set_label("Temperature [$^{\circ}$C]", fontsize = 14, color = fg) #Label
+    plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color = fg) #Tick labels
+    
+color_theme(color_fg, color_bg)
 
 
 save_queued = False
@@ -157,13 +165,13 @@ def temp_alarm(alarm):
     global alarm_state
     if alarm:
         if not alarm_state:
-            fig.patch.set_facecolor(color_temp_alarm)
+            color_theme(color_fg, color_temp_alarm)
             if test_buzzer == True:
                 buzz(600, 5)
             alarm_state = True
     else:
         if alarm_state:
-            fig.patch.set_facecolor(color_bg)
+            color_theme(color_fg, color_bg)
             alarm_state = False
     
 
@@ -243,7 +251,7 @@ while True:
                 data_array_keep.pop(0)
             print("Keeping frames: " + str(len(data_array_keep)))
             
-            update_view(data_array_keep[0])
+            #update_view(data_array_keep[0])
         
         if PRINT_CLEAR:
             os.system("clear")
