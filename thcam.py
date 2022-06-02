@@ -33,9 +33,11 @@ temp_range_max = int(config.get("Temperature_Range", "range_max")) #300 °C
 test_pixels = eval(config.get("Monitor", "monitor_pixels_enable"))
 test_buzzer = eval(config.get("Monitor", "monitor_buzzer_enable"))
 test_array = eval(config.get("Monitor", "monitor_pixels_array"))
+#test_pixels_autosave = True
 
-frames_keep = True
-frames_keep_amount = 5
+pixel_trigger = eval(config.get("Monitor", "monitor_autotrigger_enable"))
+pixel_trigger_array = eval(config.get("Monitor", "monitor_autotrigger_array"))
+frames_keep_amount = int(config.get("Monitor", "monitor_autotrigger_previous_frame"))
 
 emissivity = float(config.get("Accuracy", "emissivity"))
 EMISSIVITY_BASELINE = 1
@@ -167,7 +169,7 @@ def temp_alarm(alarm):
     global alarm_state
     if alarm:
         if not alarm_state:
-            color_theme(color_fg, color_temp_alarm)
+            color_theme(color_bg, color_temp_alarm)
             if test_buzzer == True:
                 buzz(600, 5)
             alarm_state = True
@@ -219,13 +221,14 @@ def update_view(array):
         plt.pause(0.001) #required
 
 
-pixel_trigger_prev = True ####TEST#########################################
-pixel_trigger_prev_array = [[0, 0, 10, 50], [0, 31, 10, 50], [23, 0, 35, 50], [23, 31, 10, 50], [11, 15, 10, 50]]
-pixel_triggered_prev = False
+
+
 
 #Loop
 if PRINT_DEBUG:
     print("Starting loop")
+    
+autosave_triggered = False
     
 frame = np.zeros((SENSOR_SHAPE[0]*SENSOR_SHAPE[1], )) #setup array for storing all 768 temperatures
 t_array = []
@@ -243,11 +246,22 @@ while True:
         data_array = np.reshape(data_array, SENSOR_SHAPE) #Reshape to 24x32
         data_array = np.fliplr(data_array) #Flip left to right
         
+        update_view(data_array)
+        
         if test_pixels:
             temp_alarm(not measurement_points(data_array, test_array))
-                
-
-        update_view(data_array)
+#            test_pixels_result = measurement_points(data_array, test_array)
+#            temp_alarm(not test_pixels_result)
+#        
+#            if test_pixels_save:
+#                if not autosave_triggered:
+#                    if PRINT_SAVE:
+#                        print("Automatically saving current picture...")
+#                        autosave_triggered = True
+#                        save_now()
+#                else:
+#                    if test_pixels_result:
+#                        autosave_triggered = False
         
         if save_queued:
             save_now()
@@ -256,25 +270,29 @@ while True:
             color_theme(color_fg, color_bg)
         
         
-        if frames_keep:
+        if pixel_trigger:
+            #Store previous frames
             data_array_keep.append(data_array)
             if len(data_array_keep) > frames_keep_amount + 1:
                 data_array_keep.pop(0)
             
-        if pixel_trigger_prev: ####TEST#################
-            if measurement_points(data_array, pixel_trigger_prev_array):
-                if not pixel_triggered_prev:
+            #Test pixels & save
+            if measurement_points(data_array, pixel_trigger_array):
+                if not autosave_triggered:
                     if PRINT_SAVE:
                         print("Automatically saving previous picture...")
-                    pixel_triggered_prev = True
+                    autosave_triggered = True
                     update_view(data_array_keep[0])
                     save_now()
                     color_theme(color_bg, color_pixel_trigger)
-                    update_view(data_array)
-                    color_theme(color_fg, color_bg)
+                    update_view(data_array_keep[0])
+                    if not alarm_state:
+                        color_theme(color_fg, color_bg)
+                    else:
+                        color_theme(color_bg, color_temp_alarm)
             else:
-                if pixel_triggered_prev:
-                    pixel_triggered_prev = False
+                if autosave_triggered:
+                    autosave_triggered = False
                     
         
         if PRINT_CLEAR:
