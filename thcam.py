@@ -242,8 +242,11 @@ while True:
         
         if save_queued:
             save_now()
+            color_theme(color_bg, color_fg)
+            update_view(data_array)
+            color_theme(color_fg, color_bg)
             
-        t_array.append(time.monotonic()-t1)
+        #t_array.append(time.monotonic()-t1)
         
         if frames_keep:
             data_array_keep.append(data_array)
@@ -257,6 +260,7 @@ while True:
             os.system("clear")
         
         if PRINT_FPS:
+            t_array.append(time.monotonic()-t1)
             print("Sample Rate: {0:2.1f}fps".format(len(t_array)/np.sum(t_array)))
             
     except ValueError:
