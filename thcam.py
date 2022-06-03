@@ -12,12 +12,14 @@ import sys
 
 
 
+#Config#################################################################
 #Read config file
 try:
     config_file = sys.argv[1]
     config = configparser.ConfigParser()
     config.read(config_file)
-    
+
+#Catch no config file    
 except IndexError:
     print("Missing argument: No configuration file specified!")
     print("Useage: python3 thcam.py /example/path/to/configfile.ini")
@@ -26,6 +28,7 @@ except IndexError:
 
 
 
+#Variables##############################################################
 temp_range = config.get("Temperature_Range", "range_enable")
 temp_range_min = int(config.get("Temperature_Range", "range_min")) #-40 °C
 temp_range_max = int(config.get("Temperature_Range", "range_max")) #300 °C
@@ -77,25 +80,27 @@ PRINT_CLEAR = False
 
 
 
-#Calculate emissivity compensation
-e_comp = EMISSIVITY_BASELINE / emissivity
-test_array_rows = np.shape(test_array)[0]
-SENSOR_SHAPE = (24, 32) #resolution
+#Intermediate results###################################################
+e_comp = EMISSIVITY_BASELINE / emissivity #Emissivity compensation
 
-#Init MLX
+#Init MLX###############################################################
 if PRINT_DEBUG:
     print("Initialize MLX90640")
-i2c = busio.I2C(board.SCL, board.SDA, frequency=800000) #I2C
-mlx = adafruit_mlx90640.MLX90640(i2c) #MLX90640
-mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ #1, 2, 4, 8, 16, 32, 64 HZ possible
+    
+SENSOR_SHAPE = (24, 32) #resolution of Sensor
+
+i2c = busio.I2C(board.SCL, board.SDA, frequency=800000) #GPIO I2C frequency
+
+mlx = adafruit_mlx90640.MLX90640(i2c) #Start MLX90640
+mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ #Refresh rate 1, 2, 4, 8, 16, 32, 64 HZ possible
 
 
-#Matplotlib
+#Matplotlib#############################################################
 if PRINT_DEBUG:
     print("Starting Matplotlib")
 plt.ion() #Interactive plotting
 fig,ax = plt.subplots(figsize=(12, 7)) #Figures & Axes
-therm1 = ax.imshow(np.zeros(SENSOR_SHAPE), vmin=0, vmax=60, interpolation=interpolation) #start plot with zeros
+therm1 = ax.imshow(np.zeros(SENSOR_SHAPE), vmin=0, vmax=60, interpolation=interpolation) #start plot
 
 fig.canvas.manager.set_window_title(TITLE) #Window title
 fig.canvas.manager.window.move(WINDOW_POS_X, WINDOW_POS_Y) #Move window
@@ -116,6 +121,9 @@ cbar = fig.colorbar(therm1) #Colorbar for temps
 #plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color=color_fg) #Tick labels
 
 
+
+#Functions##############################################################
+#Change color theme
 def color_theme(fg, bg):
     fig.patch.set_facecolor(bg) #Background color
     
@@ -126,11 +134,14 @@ def color_theme(fg, bg):
 color_theme(color_fg, color_bg)
 
 
-save_queued = False
+#Queue a save
+save_queued = False #Store save queued state
 def save_queue():
     global save_queued
     save_queued = True
+   
     
+#Save now. Only call from within the loop!
 def save_now():
     global save_queued
     filename = SAVE_PATH + "/" + SAVE_PREFIX + datetime() + SAVE_SUFFIX + "." + SAVE_FILEFORMAT
@@ -139,6 +150,7 @@ def save_now():
         print("Saved " + filename)
     save_queued = False
     sleep(1)
+
 
 #GPIO capture button
 def trigger_callback(pin):
@@ -159,12 +171,14 @@ def buzz(freq, time):
     buzzer.stop()
 
 
+#Get datetime
 def datetime():
     dt = time.strftime("%Y-%m-%d_%H-%M-%S")
     return dt
         
 
-alarm_state = False
+#Sound alarm when alarm = True
+alarm_state = False #Store alarm state
 def temp_alarm(alarm):
     global alarm_state
     if alarm:
@@ -179,9 +193,10 @@ def temp_alarm(alarm):
             alarm_state = False
     
 
+#Check pixels if in tolerance. Returns if ALL pixels are in tolerance or not.
 def measurement_points(data_array, test_array): #If all pixels in range return True
     pixels_results = []
-    #           Yt  Xl  Min Max
+    test_array_rows = np.shape(test_array)[0]
     for row in range(test_array_rows):
         pixel_tested = test(data_array,  test_array[row][0],  test_array[row][1], test_array[row][2], test_array[row][3])
         pixels_results.append(pixel_tested)
@@ -191,8 +206,8 @@ def measurement_points(data_array, test_array): #If all pixels in range return T
         return True
 
 
+#Tests one if pixel is in tolerance and returns result. Called from measurement_points()
 def test(pixel, row, column, temp_min, temp_max):
-    
     if pixel[row, column] > temp_min and pixel[row, column] < temp_max:
         if PRINT_PIXEL_TEST:
             print("Pixel [" + str(row) + "][" + str(column) + "] ok.")
@@ -203,12 +218,14 @@ def test(pixel, row, column, temp_min, temp_max):
         return False
 
 
+#Update the view########################################################
 def update_view(array):
-        therm1.set_data(array)
+        therm1.set_data(array) #update view
         therm1.set_clim(vmin=np.min(array), vmax=np.max(array)) #set bounds
         
-        cbar.update_normal(therm1) #update colorbar range
+        cbar.update_normal(therm1) #update colorbar
         
+        #Text above view. Max, Avg, Min
         if not temp_range or temp_min > temp_range_min and temp_max < temp_range_max:
             plt.title(f"Max Temp: {np.max(data_array):.1f} °C    Avg Temp: {np.average(data_array):.1f} °C    Min Temp: {np.min(data_array):.1f} °C", color=color_fg)
         elif temp_min < temp_range_min and temp_max < temp_range_max:
@@ -222,34 +239,32 @@ def update_view(array):
 
 
 
-
-
-#Loop
+#Loop###################################################################
 if PRINT_DEBUG:
     print("Starting loop")
     
-autosave_triggered = False
+autosave_triggered = False #Store autosave state
     
 frame = np.zeros((SENSOR_SHAPE[0]*SENSOR_SHAPE[1], )) #setup array for storing all 768 temperatures
-t_array = []
-data_array_keep = []
+t_array = [] #Create array to store refresh rate
+data_array_keep = [] #Create array to store previous frames
 while True:
-    t1 = time.monotonic()
+    t1 = time.monotonic() #for calculating refresh rete
     try:
-        mlx.getFrame(frame) #read MLX temperatures into frame var
-        data_array = frame
-        data_array *= e_comp
-        temp_min = np.min(data_array)
-        temp_max = np.max(data_array)
-        if temp_range:
-            data_array = np.clip(data_array, temp_range_min, temp_range_max) #Clip temps
-        data_array = np.reshape(data_array, SENSOR_SHAPE) #Reshape to 24x32
-        data_array = np.fliplr(data_array) #Flip left to right
+        mlx.getFrame(frame) #read MLX temperatures into frame
+        data_array = frame #Store frame into variable
+        data_array *= e_comp #Correct temperature
+        temp_min = np.min(data_array) #Store min temp
+        temp_max = np.max(data_array) #Store max temp
+        if temp_range: #If temperatures above and below threshhold should be ignored
+            data_array = np.clip(data_array, temp_range_min, temp_range_max) #Clip temps above or below specified value
+        data_array = np.reshape(data_array, SENSOR_SHAPE) #Reshape array to Sensor size. Results in 2D array
+        data_array = np.fliplr(data_array) #Flip array left to right
         
-        update_view(data_array)
+        update_view(data_array) #Update view
         
-        if test_pixels:
-            temp_alarm(not measurement_points(data_array, test_array))
+        if test_pixels: #If pixels should be tested
+            temp_alarm(not measurement_points(data_array, test_array)) #Check if alarm nets to be activated
 #            test_pixels_result = measurement_points(data_array, test_array)
 #            temp_alarm(not test_pixels_result)
 #        
@@ -263,14 +278,14 @@ while True:
 #                    if test_pixels_result:
 #                        autosave_triggered = False
         
-        if save_queued:
+        if save_queued: #save if queued
             save_now()
             color_theme(color_bg, color_fg)
             update_view(data_array)
             color_theme(color_fg, color_bg)
         
         
-        if pixel_trigger:
+        if pixel_trigger: #If pixels in specified range should trigger a save
             #Store previous frames
             data_array_keep.append(data_array)
             if len(data_array_keep) > frames_keep_amount + 1:
