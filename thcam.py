@@ -29,25 +29,27 @@ except IndexError:
 
 
 #Variables##############################################################
-temp_range = config.get("Temperature_Range", "range_enable")
+temp_range = config.get("Temperature_Range", "range_enable") #Temperatures below and above specified values will be ignored and not shown in thermal image if enabled.
 temp_range_min = int(config.get("Temperature_Range", "range_min")) #-40 °C
 temp_range_max = int(config.get("Temperature_Range", "range_max")) #300 °C
 
-test_pixels = eval(config.get("Monitor", "monitor_pixels_enable"))
-test_buzzer = eval(config.get("Monitor", "monitor_buzzer_enable"))
-test_array = eval(config.get("Monitor", "monitor_pixels_array"))
+test_pixels = eval(config.get("Monitor", "monitor_pixels_enable")) #Monitor pixels. If one or more are not in tolerance, turn screen red. Opptinally send PWM signal to a buzzer.
+test_buzzer = eval(config.get("Monitor", "monitor_buzzer_enable")) #PWM buzzer
+test_array = eval(config.get("Monitor", "monitor_pixels_array")) #Array of pixels to be tested
 #test_pixels_autosave = True
 
-pixel_trigger = eval(config.get("Monitor", "monitor_autotrigger_enable"))
-pixel_trigger_array = eval(config.get("Monitor", "monitor_autotrigger_array"))
-frames_keep_amount = int(config.get("Monitor", "monitor_autotrigger_previous_frame"))
+pixel_trigger = eval(config.get("Monitor", "monitor_autotrigger_enable")) #If ALL pixels in specified range. Save the oldest frame stored. See: frames_keep_amount. Set to 0 for current frame.
+pixel_trigger_array = eval(config.get("Monitor", "monitor_autotrigger_array")) #Which pixels to test.
+frames_keep_amount = int(config.get("Monitor", "monitor_autotrigger_previous_frame")) #Number of past frames to keep.
 
-emissivity = float(config.get("Accuracy", "emissivity"))
-EMISSIVITY_BASELINE = 1
+emissivity = float(config.get("Accuracy", "emissivity")) #Emissivity
+EMISSIVITY_BASELINE = 1 #Correct sensor emissivity baseline. (Should not be necessary)
 
+#GPIO pin numbers
 GPIO_TRIGGER = 12
 GPIO_BUZZER = 13
 
+#Window parameters
 TITLE = "Thermal Camera"
 SCREEN_W = 800
 SCREEN_H = 480
@@ -58,17 +60,20 @@ SPACE_B = 0.025
 SPACE_R = 0.95
 SPACE_T = 0.95
 
+#Appearance
 color_bg = "black"
 color_fg = "white"
 color_temp_alarm = "red"
 color_pixel_trigger = "yellow"
 interpolation = str(config.get("View", "interpolation")) #none, nearest, bilinear, bicubic, spline16, spline36, hanning, hamming, hermite, kaiser, quadric, catrom, gaussian, bessel, mitchell, sinc, lanczos
 
+#Save
 SAVE_PREFIX = str(config.get("Save", "save_prefix"))
 SAVE_SUFFIX = str(config.get("Save", "save_suffix"))
 SAVE_PATH = str(config.get("Save", "save_path"))
 SAVE_FILEFORMAT = str(config.get("Save", "save_format")) #ps, eps, pdf, pgf, png, raw, rgba, svg, svgz, jpg, jpeg, tif, tiff
 
+#Console output
 PRINT_FPS = True
 PRINT_SAVE = True
 PRINT_PIXEL_TEST = False
