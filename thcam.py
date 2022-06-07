@@ -5,7 +5,6 @@ import numpy as np
 import RPi.GPIO as GPIO
 import adafruit_mlx90640
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Button
 import configparser
 import os
 import sys
