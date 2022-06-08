@@ -45,7 +45,8 @@ emissivity = float(config.get("Accuracy", "emissivity")) #Emissivity
 EMISSIVITY_BASELINE = 1 #Correct sensor emissivity baseline. (Should not be necessary)
 
 #GPIO pin numbers
-GPIO_TRIGGER = 12
+GPIO_TRIGGER_1 = 12
+GPIO_TRIGGER_2 = 26
 GPIO_BUZZER = 13
 
 #Window parameters
@@ -161,9 +162,13 @@ def trigger_callback(pin):
     save_queue()
     if PRINT_DEBUG:
         print("GPIO " + str(pin) + " Button pressed.")
+        
+def trigger_setup(pin):
+    GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP) #Button
+    GPIO.add_event_detect(pin, GPIO.FALLING, callback=trigger_callback)
 
-GPIO.setup(GPIO_TRIGGER, GPIO.IN, pull_up_down=GPIO.PUD_UP) #Button
-GPIO.add_event_detect(GPIO_TRIGGER, GPIO.FALLING, callback=trigger_callback)
+trigger_setup(GPIO_TRIGGER_1)
+trigger_setup(GPIO_TRIGGER_2)
 
 
 #GPIO PWM buzzer
