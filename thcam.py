@@ -90,7 +90,7 @@ PRINT_CLEAR = False
 
 #MLX90640###############################################################
 if PRINT_DEBUG:
-    print("Initialize MLX90640")
+    print("Setting up MLX90640")
     
 SENSOR_SHAPE = (24, 32) #resolution of Sensor
 
@@ -116,6 +116,8 @@ def get_frame():
 
 
 #Save###################################################################
+if PRINT_DEBUG:
+    print("Setting up GPIO buttons")
 #GPIO capture button
 def trigger_callback(pin): #called when button pressed
     save_queue()
@@ -196,11 +198,11 @@ def test(pixel, row, column, temp_min, temp_max):
     
 
 #Check pixels if in tolerance. Returns True if ALL pixels are in tolerance.
-def measurement_points(data_array, test_array):
+def measurement_points(frame_array, test_array):
     pixels_results = []
     test_array_rows = np.shape(test_array)[0]
     for row in range(test_array_rows):
-        pixel_tested = test(data_array,  test_array[row][0],  test_array[row][1], test_array[row][2], test_array[row][3])
+        pixel_tested = test(frame_array,  test_array[row][0],  test_array[row][1], test_array[row][2], test_array[row][3])
         pixels_results.append(pixel_tested)
     if False in pixels_results:
         return False
@@ -252,13 +254,13 @@ def update_view(array):
         
         #Text above view. Max, Avg, Min
         if not temp_range or temp_min > temp_range_min and temp_max < temp_range_max:
-            plt.title(f"Max Temp: {np.max(data_array):.1f} °C    Avg Temp: {np.average(data_array):.1f} °C    Min Temp: {np.min(data_array):.1f} °C", color=COLOR_FG)
+            plt.title(f"Max Temp: {temp_max:.1f} °C    Avg Temp: {np.average(frame_array):.1f} °C    Min Temp: {temp_min:.1f} °C", color=COLOR_FG)
         elif temp_min < temp_range_min and temp_max < temp_range_max:
-            plt.title(f"Max Temp: {np.max(data_array):.1f} °C            *Min Temp: < {np.min(data_array):.1f} °C  ({temp_min:.1f} °C)", color=COLOR_FG)
+            plt.title(f"Max Temp: {temp_max:.1f} °C            *Min Temp: < {np.min(frame_array):.1f} °C  ({temp_min:.1f} °C)", color=COLOR_FG)
         elif temp_min > temp_range_min and temp_max > temp_range_max:
-            plt.title(f"*Max Temp: > {np.max(data_array):.1f} °C  ({temp_max:.1f} °C)            Min Temp: {np.min(data_array):.1f} °C", color=COLOR_FG)
+            plt.title(f"*Max Temp: > {np.max(frame_array):.1f} °C  ({temp_max:.1f} °C)            Min Temp: {temp_min:.1f} °C", color=COLOR_FG)
         elif temp_min < temp_range_min and temp_max > temp_range_max:
-            plt.title(f"*Max Temp: > {np.max(data_array):.1f} °C  ({temp_max:.1f} °C)        *Min Temp: < {np.min(data_array):.1f} °C  ({temp_min:.1f} °C)", color=COLOR_FG)
+            plt.title(f"*Max Temp: > {np.max(frame_array):.1f} °C  ({temp_max:.1f} °C)        *Min Temp: < {np.min(frame_array):.1f} °C  ({temp_min:.1f} °C)", color=COLOR_FG)
         
         plt.pause(0.001) #required
 
@@ -271,26 +273,17 @@ if PRINT_DEBUG:
 e_comp = EMISSIVITY_BASELINE / emissivity #Emissivity compensation
 autosave_triggered = False #Store autosave state
 t_array = [] #Create array to store refresh rate
-data_array_keep = [] #Create array to store previous frames
+frame_array_keep = [] #Create array to store previous frames
 while True:
     t1 = time.monotonic() #for calculating refresh rete
     try:
-        data_array, temp_min, temp_max = get_frame()
-        #mlx.getFrame(frame) #read MLX temperatures into frame
-        #data_array = frame #Store frame into variable
-        #data_array *= e_comp #Correct temperature
-        #temp_min = np.min(data_array) #Store min temp
-        #temp_max = np.max(data_array) #Store max temp
-        #if temp_range: #If temperatures above and below threshhold should be ignored
-        #    data_array = np.clip(data_array, temp_range_min, temp_range_max) #Clip temps above or below specified value
-        #data_array = np.reshape(data_array, SENSOR_SHAPE) #Reshape array to Sensor size. Results in 2D array
-        #data_array = np.fliplr(data_array) #Flip array left to right
+        frame_array, temp_min, temp_max = get_frame()
         
-        update_view(data_array) #Update view
+        update_view(frame_array) #Update view
         
         if test_pixels: #If pixels should be tested
-            temp_alarm(not measurement_points(data_array, test_array)) #Check if alarm nets to be activated
-#            test_pixels_result = measurement_points(data_array, test_array)
+            temp_alarm(not measurement_points(frame_array, test_array)) #Check if alarm nets to be activated
+#            test_pixels_result = measurement_points(frame_array, test_array)
 #            temp_alarm(not test_pixels_result)
 #        
 #            if test_pixels_save:
@@ -306,26 +299,26 @@ while True:
         if save_queued: #save if queued
             save_now()
             color_theme(COLOR_BG, COLOR_FG)
-            update_view(data_array)
+            update_view(frame_array)
             color_theme(COLOR_FG, COLOR_BG)
         
         
         if pixel_trigger: #If pixels in specified range should trigger a save
             #Store previous frames
-            data_array_keep.append(data_array)
-            if len(data_array_keep) > frames_keep_amount + 1:
-                data_array_keep.pop(0)
+            frame_array_keep.append(frame_array)
+            if len(frame_array_keep) > frames_keep_amount + 1:
+                frame_array_keep.pop(0)
             
             #Test pixels & save
-            if measurement_points(data_array, pixel_trigger_array):
+            if measurement_points(frame_array, pixel_trigger_array):
                 if not autosave_triggered:
                     if PRINT_SAVE:
                         print("Automatically saving previous picture...")
                     autosave_triggered = True
-                    update_view(data_array_keep[0])
+                    update_view(frame_array_keep[0])
                     save_now()
                     color_theme(COLOR_BG, COLOR_PIXEL_TRIGGER)
-                    update_view(data_array_keep[0])
+                    update_view(frame_array_keep[0])
                     if not alarm_state:
                         color_theme(COLOR_FG, COLOR_BG)
                     else:
