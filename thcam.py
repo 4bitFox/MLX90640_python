@@ -70,6 +70,7 @@ COLOR_FG = "white"
 COLOR_TEMP_ALARM = "red"
 COLOR_PIXEL_TRIGGER = "yellow"
 interpolation = str(config.get("View", "interpolation")) #none, nearest, bilinear, bicubic, spline16, spline36, hanning, hamming, hermite, kaiser, quadric, catrom, gaussian, bessel, mitchell, sinc, lanczos
+fullscreen = False
 
 #Save
 SAVE_PREFIX = str(config.get("Save", "save_prefix"))
@@ -97,28 +98,6 @@ i2c = busio.I2C(board.SCL, board.SDA, frequency=800000) #GPIO I2C frequency
 
 mlx = adafruit_mlx90640.MLX90640(i2c) #Start MLX90640
 mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ #Refresh rate 1, 2, 4, 8, 16, 32, 64 HZ possible
-
-
-
-#Prepare Matplotlib#####################################################
-if PRINT_DEBUG:
-    print("Starting Matplotlib")
-plt.ion() #Interactive plotting
-fig,ax = plt.subplots(figsize=(12, 7)) #Subplots
-therm1 = ax.imshow(np.zeros(SENSOR_SHAPE), vmin=0, vmax=60, interpolation=interpolation) #Start plot with zeroes
-
-fig.canvas.manager.set_window_title(TITLE) #Window title
-fig.canvas.manager.window.move(WINDOW_POS_X, WINDOW_POS_Y) #Move window
-fig.canvas.manager.window.resize(SCREEN_W, SCREEN_H) #Resize to fit screen
-fig.canvas.manager.toolbar.hide() #Hide toolbar
-fig.subplots_adjust(left=SPACE_L, bottom=SPACE_B, right=SPACE_R, top=SPACE_T) #Adjust space to border
-#fig.canvas.manager.full_screen_toggle() #Fullscreen
-
-plt.xticks([]) #Hide xticks
-plt.yticks([]) #Hide yticks
-
-#Define temperature bar
-cbar = fig.colorbar(therm1) #Colorbar for temps
 
 
 
@@ -217,6 +196,28 @@ def measurement_points(data_array, test_array):
 
 
 #View###################################################################
+#Set up window
+if PRINT_DEBUG:
+    print("Setting up Matplotlib")
+plt.ion() #Interactive plotting
+fig,ax = plt.subplots(figsize=(12, 7)) #Subplots
+fig.canvas.manager.set_window_title(TITLE) #Window title
+fig.canvas.manager.toolbar.hide() #Hide toolbar
+fig.subplots_adjust(left=SPACE_L, bottom=SPACE_B, right=SPACE_R, top=SPACE_T) #Adjust space to border
+plt.xticks([]) #Hide xticks
+plt.yticks([]) #Hide yticks
+if fullscreen:
+    fig.canvas.manager.full_screen_toggle() #Fullscreen
+else:
+    fig.canvas.manager.window.move(WINDOW_POS_X, WINDOW_POS_Y) #Move window
+    fig.canvas.manager.window.resize(SCREEN_W, SCREEN_H) #Resize to fit screen
+
+
+#Preview and Tepmerature bar
+therm1 = ax.imshow(np.zeros(SENSOR_SHAPE), vmin=0, vmax=60, interpolation=interpolation) #Start plot with zeroes
+cbar = fig.colorbar(therm1) #Colorbar for temps
+
+
 #Change color theme
 def color_theme(fg, bg):
     fig.patch.set_facecolor(bg) #Background color
