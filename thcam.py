@@ -61,10 +61,10 @@ SPACE_R = 0.95
 SPACE_T = 0.95
 
 #Appearance
-color_bg = "black"
-color_fg = "white"
-color_temp_alarm = "red"
-color_pixel_trigger = "yellow"
+COLOR_BG = "black"
+COLOR_FG = "white"
+COLOR_TEMP_ALARM = "red"
+COLOR_PIXEL_TRIGGER = "yellow"
 interpolation = str(config.get("View", "interpolation")) #none, nearest, bilinear, bicubic, spline16, spline36, hanning, hamming, hermite, kaiser, quadric, catrom, gaussian, bessel, mitchell, sinc, lanczos
 
 #Save
@@ -110,16 +110,16 @@ fig.canvas.manager.toolbar.hide() #Hide toolbar
 fig.subplots_adjust(left=SPACE_L, bottom=SPACE_B, right=SPACE_R, top=SPACE_T) #Adjust space to border
 #fig.canvas.manager.full_screen_toggle() #Fullscreen
 
-#fig.patch.set_facecolor(color_bg) #Background color
+#fig.patch.set_facecolor(COLOR_BG) #Background color
 
 plt.xticks([]) #Hide xticks
 plt.yticks([]) #Hide yticks
 
 #Define temperature bar
 cbar = fig.colorbar(therm1) #Colorbar for temps
-#cbar.ax.yaxis.set_tick_params(color=color_fg) #Tick color
-#cbar.set_label("Temperature [$^{\circ}$C]", fontsize=14, color=color_fg) #Label
-#plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color=color_fg) #Tick labels
+#cbar.ax.yaxis.set_tick_params(color=COLOR_FG) #Tick color
+#cbar.set_label("Temperature [$^{\circ}$C]", fontsize=14, color=COLOR_FG) #Label
+#plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color=COLOR_FG) #Tick labels
 
 
 
@@ -155,7 +155,7 @@ def save_queue():
 def save_now():
     global save_queued
     filename = SAVE_PATH + "/" + SAVE_PREFIX + datetime() + SAVE_SUFFIX + "." + SAVE_FILEFORMAT
-    plt.savefig(filename, format = SAVE_FILEFORMAT, facecolor = color_bg)
+    plt.savefig(filename, format = SAVE_FILEFORMAT, facecolor = COLOR_BG)
     if PRINT_SAVE:
         print("Saved " + filename)
     save_queued = False
@@ -179,13 +179,13 @@ def temp_alarm(alarm):
     global alarm_state
     if alarm:
         if not alarm_state:
-            color_theme(color_bg, color_temp_alarm)
+            color_theme(COLOR_BG, COLOR_TEMP_ALARM)
             if test_buzzer == True:
                 buzz(600, 5)
             alarm_state = True
     else:
         if alarm_state:
-            color_theme(color_fg, color_bg)
+            color_theme(COLOR_FG, COLOR_BG)
             alarm_state = False
   
 
@@ -226,7 +226,7 @@ def color_theme(fg, bg):
     cbar.set_label("Temperature [$^{\circ}$C]", fontsize = 14, color = fg) #Label
     plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color = fg) #Tick labels
     
-color_theme(color_fg, color_bg)
+color_theme(COLOR_FG, COLOR_BG)
 
 
 #Update view
@@ -238,13 +238,13 @@ def update_view(array):
         
         #Text above view. Max, Avg, Min
         if not temp_range or temp_min > temp_range_min and temp_max < temp_range_max:
-            plt.title(f"Max Temp: {np.max(data_array):.1f} °C    Avg Temp: {np.average(data_array):.1f} °C    Min Temp: {np.min(data_array):.1f} °C", color=color_fg)
+            plt.title(f"Max Temp: {np.max(data_array):.1f} °C    Avg Temp: {np.average(data_array):.1f} °C    Min Temp: {np.min(data_array):.1f} °C", color=COLOR_FG)
         elif temp_min < temp_range_min and temp_max < temp_range_max:
-            plt.title(f"Max Temp: {np.max(data_array):.1f} °C            *Min Temp: < {np.min(data_array):.1f} °C  ({temp_min:.1f} °C)", color=color_fg)
+            plt.title(f"Max Temp: {np.max(data_array):.1f} °C            *Min Temp: < {np.min(data_array):.1f} °C  ({temp_min:.1f} °C)", color=COLOR_FG)
         elif temp_min > temp_range_min and temp_max > temp_range_max:
-            plt.title(f"*Max Temp: > {np.max(data_array):.1f} °C  ({temp_max:.1f} °C)            Min Temp: {np.min(data_array):.1f} °C", color=color_fg)
+            plt.title(f"*Max Temp: > {np.max(data_array):.1f} °C  ({temp_max:.1f} °C)            Min Temp: {np.min(data_array):.1f} °C", color=COLOR_FG)
         elif temp_min < temp_range_min and temp_max > temp_range_max:
-            plt.title(f"*Max Temp: > {np.max(data_array):.1f} °C  ({temp_max:.1f} °C)        *Min Temp: < {np.min(data_array):.1f} °C  ({temp_min:.1f} °C)", color=color_fg)
+            plt.title(f"*Max Temp: > {np.max(data_array):.1f} °C  ({temp_max:.1f} °C)        *Min Temp: < {np.min(data_array):.1f} °C  ({temp_min:.1f} °C)", color=COLOR_FG)
         
         plt.pause(0.001) #required
 
@@ -291,9 +291,9 @@ while True:
         
         if save_queued: #save if queued
             save_now()
-            color_theme(color_bg, color_fg)
+            color_theme(COLOR_BG, COLOR_FG)
             update_view(data_array)
-            color_theme(color_fg, color_bg)
+            color_theme(COLOR_FG, COLOR_BG)
         
         
         if pixel_trigger: #If pixels in specified range should trigger a save
@@ -310,12 +310,12 @@ while True:
                     autosave_triggered = True
                     update_view(data_array_keep[0])
                     save_now()
-                    color_theme(color_bg, color_pixel_trigger)
+                    color_theme(COLOR_BG, COLOR_PIXEL_TRIGGER)
                     update_view(data_array_keep[0])
                     if not alarm_state:
-                        color_theme(color_fg, color_bg)
+                        color_theme(COLOR_FG, COLOR_BG)
                     else:
-                        color_theme(color_bg, color_temp_alarm)
+                        color_theme(COLOR_BG, COLOR_TEMP_ALARM)
             else:
                 if autosave_triggered:
                     autosave_triggered = False
