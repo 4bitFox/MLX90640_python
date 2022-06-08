@@ -88,7 +88,7 @@ PRINT_CLEAR = False
 
 
 
-#Init MLX###############################################################
+#MLX90640###############################################################
 if PRINT_DEBUG:
     print("Initialize MLX90640")
     
@@ -98,6 +98,20 @@ i2c = busio.I2C(board.SCL, board.SDA, frequency=800000) #GPIO I2C frequency
 
 mlx = adafruit_mlx90640.MLX90640(i2c) #Start MLX90640
 mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ #Refresh rate 1, 2, 4, 8, 16, 32, 64 HZ possible
+
+
+frame_array_new = np.zeros((SENSOR_SHAPE[0]*SENSOR_SHAPE[1], )) #setup array for storing all 768 temperatures
+def get_frame():
+    mlx.getFrame(frame_array_new) #read MLX temperatures into variable
+    frame_array = frame_array_new #Store read frame into variable 
+    frame_array *= e_comp #Correct temperature
+    temp_min = np.min(frame_array) #Store min temp
+    temp_max = np.max(frame_array) #Store max temp
+    if temp_range: #If temperatures above and below threshhold should be ignored
+        array = np.clip(frame_array, temp_range_min, temp_range_max) #Clip temps above or below specified value
+    frame_array = np.reshape(frame_array, SENSOR_SHAPE) #Reshape array to Sensor size. Results in 2D array
+    frame_array = np.fliplr(frame_array) #Flip array left to right
+    return frame_array, temp_min, temp_max
 
 
 
@@ -256,21 +270,21 @@ if PRINT_DEBUG:
     
 e_comp = EMISSIVITY_BASELINE / emissivity #Emissivity compensation
 autosave_triggered = False #Store autosave state
-frame = np.zeros((SENSOR_SHAPE[0]*SENSOR_SHAPE[1], )) #setup array for storing all 768 temperatures
 t_array = [] #Create array to store refresh rate
 data_array_keep = [] #Create array to store previous frames
 while True:
     t1 = time.monotonic() #for calculating refresh rete
     try:
-        mlx.getFrame(frame) #read MLX temperatures into frame
-        data_array = frame #Store frame into variable
-        data_array *= e_comp #Correct temperature
-        temp_min = np.min(data_array) #Store min temp
-        temp_max = np.max(data_array) #Store max temp
-        if temp_range: #If temperatures above and below threshhold should be ignored
-            data_array = np.clip(data_array, temp_range_min, temp_range_max) #Clip temps above or below specified value
-        data_array = np.reshape(data_array, SENSOR_SHAPE) #Reshape array to Sensor size. Results in 2D array
-        data_array = np.fliplr(data_array) #Flip array left to right
+        data_array, temp_min, temp_max = get_frame()
+        #mlx.getFrame(frame) #read MLX temperatures into frame
+        #data_array = frame #Store frame into variable
+        #data_array *= e_comp #Correct temperature
+        #temp_min = np.min(data_array) #Store min temp
+        #temp_max = np.max(data_array) #Store max temp
+        #if temp_range: #If temperatures above and below threshhold should be ignored
+        #    data_array = np.clip(data_array, temp_range_min, temp_range_max) #Clip temps above or below specified value
+        #data_array = np.reshape(data_array, SENSOR_SHAPE) #Reshape array to Sensor size. Results in 2D array
+        #data_array = np.fliplr(data_array) #Flip array left to right
         
         update_view(data_array) #Update view
         
