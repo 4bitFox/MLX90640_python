@@ -28,26 +28,25 @@ except IndexError:
 
 
 #Variables##############################################################
+#Emissivity
+emissivity = float(config.get("Accuracy", "emissivity")) #Emissivity
+EMISSIVITY_BASELINE = 1 #Correct sensor emissivity baseline. (Should not be necessary)
+
+#Clip temperatures
 temp_range = config.get("Temperature_Range", "range_enable") #Temperatures below and above specified values will be ignored and not shown in thermal image if enabled.
 temp_range_min = int(config.get("Temperature_Range", "range_min")) #-40 °C
 temp_range_max = int(config.get("Temperature_Range", "range_max")) #300 °C
 
+#Monitor temperatures
 test_pixels = eval(config.get("Monitor", "monitor_pixels_enable")) #Monitor pixels. If one or more are not in tolerance, turn screen red. Opptinally send PWM signal to a buzzer.
 test_buzzer = eval(config.get("Monitor", "monitor_buzzer_enable")) #PWM buzzer
 test_array = eval(config.get("Monitor", "monitor_pixels_array")) #Array of pixels to be tested
 #test_pixels_autosave = True
 
+#Auto trigger
 pixel_trigger = eval(config.get("Monitor", "monitor_autotrigger_enable")) #If ALL pixels in specified range. Save the oldest frame stored. See: frames_keep_amount. Set to 0 for current frame.
 pixel_trigger_array = eval(config.get("Monitor", "monitor_autotrigger_array")) #Which pixels to test.
 frames_keep_amount = int(config.get("Monitor", "monitor_autotrigger_previous_frame")) #Number of past frames to keep.
-
-emissivity = float(config.get("Accuracy", "emissivity")) #Emissivity
-EMISSIVITY_BASELINE = 1 #Correct sensor emissivity baseline. (Should not be necessary)
-
-#GPIO pin numbers
-GPIO_TRIGGER_1 = 12
-GPIO_TRIGGER_2 = 26
-GPIO_BUZZER = 13
 
 #Window parameters
 TITLE = "Thermal Camera"
@@ -59,6 +58,11 @@ SPACE_L = 0.05
 SPACE_B = 0.025
 SPACE_R = 0.95
 SPACE_T = 0.95
+
+#GPIO pin numbers
+GPIO_TRIGGER_1 = 12
+GPIO_TRIGGER_2 = 26
+GPIO_BUZZER = 13
 
 #Appearance
 COLOR_BG = "black"
@@ -100,8 +104,8 @@ mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ #Refresh rate 1, 2
 if PRINT_DEBUG:
     print("Starting Matplotlib")
 plt.ion() #Interactive plotting
-fig,ax = plt.subplots(figsize=(12, 7)) #Figures & Axes
-therm1 = ax.imshow(np.zeros(SENSOR_SHAPE), vmin=0, vmax=60, interpolation=interpolation) #start plot
+fig,ax = plt.subplots(figsize=(12, 7)) #Subplots
+therm1 = ax.imshow(np.zeros(SENSOR_SHAPE), vmin=0, vmax=60, interpolation=interpolation) #Start plot with zeroes
 
 fig.canvas.manager.set_window_title(TITLE) #Window title
 fig.canvas.manager.window.move(WINDOW_POS_X, WINDOW_POS_Y) #Move window
@@ -110,16 +114,11 @@ fig.canvas.manager.toolbar.hide() #Hide toolbar
 fig.subplots_adjust(left=SPACE_L, bottom=SPACE_B, right=SPACE_R, top=SPACE_T) #Adjust space to border
 #fig.canvas.manager.full_screen_toggle() #Fullscreen
 
-#fig.patch.set_facecolor(COLOR_BG) #Background color
-
 plt.xticks([]) #Hide xticks
 plt.yticks([]) #Hide yticks
 
 #Define temperature bar
 cbar = fig.colorbar(therm1) #Colorbar for temps
-#cbar.ax.yaxis.set_tick_params(color=COLOR_FG) #Tick color
-#cbar.set_label("Temperature [$^{\circ}$C]", fontsize=14, color=COLOR_FG) #Label
-#plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color=COLOR_FG) #Tick labels
 
 
 
