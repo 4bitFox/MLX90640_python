@@ -83,11 +83,6 @@ PRINT_CLEAR = False
 
 
 
-
-
-#Intermediate results###################################################
-e_comp = EMISSIVITY_BASELINE / emissivity #Emissivity compensation
-
 #Init MLX###############################################################
 if PRINT_DEBUG:
     print("Initialize MLX90640")
@@ -100,7 +95,8 @@ mlx = adafruit_mlx90640.MLX90640(i2c) #Start MLX90640
 mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ #Refresh rate 1, 2, 4, 8, 16, 32, 64 HZ possible
 
 
-#Matplotlib#############################################################
+
+#Prepare Matplotlib#####################################################
 if PRINT_DEBUG:
     print("Starting Matplotlib")
 plt.ion() #Interactive plotting
@@ -127,16 +123,25 @@ cbar = fig.colorbar(therm1) #Colorbar for temps
 
 
 
-#Functions##############################################################
-#Change color theme
-def color_theme(fg, bg):
-    fig.patch.set_facecolor(bg) #Background color
-    
-    cbar.ax.yaxis.set_tick_params(color = fg) #Tick color
-    cbar.set_label("Temperature [$^{\circ}$C]", fontsize = 14, color = fg) #Label
-    plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color = fg) #Tick labels
-    
-color_theme(color_fg, color_bg)
+#Save###################################################################
+#GPIO capture button
+def trigger_callback(pin): #called when button pressed
+    save_queue()
+    if PRINT_DEBUG:
+        print("GPIO " + str(pin) + " Button pressed.")
+        
+def trigger_setup(pin): #Add pin to detect button press
+    GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP) #Button
+    GPIO.add_event_detect(pin, GPIO.FALLING, callback=trigger_callback)
+
+trigger_setup(GPIO_TRIGGER_1)
+trigger_setup(GPIO_TRIGGER_2)
+
+
+#Get datetime
+def datetime():
+    dt = time.strftime("%Y-%m-%d_%H-%M-%S")
+    return dt
 
 
 #Queue a save
@@ -157,20 +162,8 @@ def save_now():
     sleep(1)
 
 
-#GPIO capture button
-def trigger_callback(pin):
-    save_queue()
-    if PRINT_DEBUG:
-        print("GPIO " + str(pin) + " Button pressed.")
-        
-def trigger_setup(pin):
-    GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP) #Button
-    GPIO.add_event_detect(pin, GPIO.FALLING, callback=trigger_callback)
 
-trigger_setup(GPIO_TRIGGER_1)
-trigger_setup(GPIO_TRIGGER_2)
-
-
+#Alarm##################################################################
 #GPIO PWM buzzer
 GPIO.setup(GPIO_BUZZER, GPIO.OUT)
 def buzz(freq, time):
@@ -178,12 +171,6 @@ def buzz(freq, time):
     buzzer.start(50) #Start with 50% duty cycle
     sleep(time)
     buzzer.stop()
-
-
-#Get datetime
-def datetime():
-    dt = time.strftime("%Y-%m-%d_%H-%M-%S")
-    return dt
         
 
 #Sound alarm when alarm = True
@@ -200,10 +187,24 @@ def temp_alarm(alarm):
         if alarm_state:
             color_theme(color_fg, color_bg)
             alarm_state = False
+  
+
+
+#Test pixels############################################################
+#Tests one if pixel is in tolerance and returns result. Called from measurement_points()
+def test(pixel, row, column, temp_min, temp_max):
+    if pixel[row, column] > temp_min and pixel[row, column] < temp_max:
+        if PRINT_PIXEL_TEST:
+            print("Pixel [" + str(row) + "][" + str(column) + "] ok.")
+        return True
+    else:
+        if PRINT_PIXEL_TEST:
+            print("Pixel [" + str(row) + "][" + str(column) + "] deviating! Should be " + str(temp_min) + " °C - " + str(temp_max) + " °C . Is " + str(round(pixel[row, column], 1)) + " °C!")
+        return False
     
 
-#Check pixels if in tolerance. Returns if ALL pixels are in tolerance or not.
-def measurement_points(data_array, test_array): #If all pixels in range return True
+#Check pixels if in tolerance. Returns True if ALL pixels are in tolerance.
+def measurement_points(data_array, test_array):
     pixels_results = []
     test_array_rows = np.shape(test_array)[0]
     for row in range(test_array_rows):
@@ -215,19 +216,20 @@ def measurement_points(data_array, test_array): #If all pixels in range return T
         return True
 
 
-#Tests one if pixel is in tolerance and returns result. Called from measurement_points()
-def test(pixel, row, column, temp_min, temp_max):
-    if pixel[row, column] > temp_min and pixel[row, column] < temp_max:
-        if PRINT_PIXEL_TEST:
-            print("Pixel [" + str(row) + "][" + str(column) + "] ok.")
-        return True
-    else:
-        if PRINT_PIXEL_TEST:
-            print("Pixel [" + str(row) + "][" + str(column) + "] deviating! Should be " + str(temp_min) + " °C - " + str(temp_max) + " °C . Is " + str(round(pixel[row, column], 1)) + " °C!")
-        return False
+
+#View###################################################################
+#Change color theme
+def color_theme(fg, bg):
+    fig.patch.set_facecolor(bg) #Background color
+    
+    cbar.ax.yaxis.set_tick_params(color = fg) #Tick color
+    cbar.set_label("Temperature [$^{\circ}$C]", fontsize = 14, color = fg) #Label
+    plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color = fg) #Tick labels
+    
+color_theme(color_fg, color_bg)
 
 
-#Update the view########################################################
+#Update view
 def update_view(array):
         therm1.set_data(array) #update view
         therm1.set_clim(vmin=np.min(array), vmax=np.max(array)) #set bounds
@@ -252,8 +254,8 @@ def update_view(array):
 if PRINT_DEBUG:
     print("Starting loop")
     
+e_comp = EMISSIVITY_BASELINE / emissivity #Emissivity compensation
 autosave_triggered = False #Store autosave state
-    
 frame = np.zeros((SENSOR_SHAPE[0]*SENSOR_SHAPE[1], )) #setup array for storing all 768 temperatures
 t_array = [] #Create array to store refresh rate
 data_array_keep = [] #Create array to store previous frames
