@@ -100,6 +100,7 @@ mlx = adafruit_mlx90640.MLX90640(i2c) #Start MLX90640
 mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ #Refresh rate 1, 2, 4, 8, 16, 32, 64 HZ possible
 
 
+e_comp = EMISSIVITY_BASELINE / emissivity #Emissivity compensation
 frame_array_new = np.zeros((SENSOR_SHAPE[0]*SENSOR_SHAPE[1], )) #setup array for storing all 768 temperatures
 def get_frame():
     mlx.getFrame(frame_array_new) #read MLX temperatures into variable
@@ -112,6 +113,51 @@ def get_frame():
     frame_array = np.reshape(frame_array, SENSOR_SHAPE) #Reshape array to Sensor size. Results in 2D array
     frame_array = np.fliplr(frame_array) #Flip array left to right
     return frame_array, temp_min, temp_max
+    
+
+autosave_triggered = False #Store autosave state
+frame_store = [] #Create array to store previous frames
+def autotrigger(frame_current):
+    global autosave_triggered
+    global frame_store
+    
+    #Store previous frames
+    frame_store.append(frame_current.copy())
+    #frame_store += [frame_current.copy()]
+    if len(frame_store) > frames_keep_amount + 1:
+        frame_store.pop(0)
+
+        ########################################################################################################################DEBUG
+        print(frame_current)
+        print("current")
+        sleep(1)
+        print(frame_store[0])
+        print("oldest kept")
+        sleep(1)
+        print(frame_store[5])
+        print("latest kept")
+        sleep(1)
+        print(frame_store[2])
+        print("third  kept")
+        sleep(1)
+            
+    #Test pixels & save
+    if measurement_points(frame_current, pixel_trigger_array):
+        if not autosave_triggered:
+            if PRINT_SAVE:
+                print("Automatically saving previous picture...")
+            autosave_triggered = True
+            update_view(frame_store[0])
+            save_now()
+            color_theme(COLOR_BG, COLOR_PIXEL_TRIGGER)
+            update_view(frame_store[0])
+            if not alarm_state:
+                color_theme(COLOR_FG, COLOR_BG)
+            else:
+                color_theme(COLOR_BG, COLOR_TEMP_ALARM)
+    else:
+        if autosave_triggered:
+            autosave_triggered = False
 
 
 
@@ -175,7 +221,7 @@ def temp_alarm(alarm):
         if not alarm_state:
             color_theme(COLOR_BG, COLOR_TEMP_ALARM)
             if test_buzzer == True:
-                buzz(600, 5)
+                buzz(800, 5)
             alarm_state = True
     else:
         if alarm_state:
@@ -270,10 +316,7 @@ def update_view(array):
 if PRINT_DEBUG:
     print("Starting loop")
     
-e_comp = EMISSIVITY_BASELINE / emissivity #Emissivity compensation
-autosave_triggered = False #Store autosave state
 t_array = [] #Create array to store refresh rate
-frame_array_keep = [] #Create array to store previous frames
 while True:
     t1 = time.monotonic() #for calculating refresh rete
     try:
@@ -304,28 +347,43 @@ while True:
         
         
         if pixel_trigger: #If pixels in specified range should trigger a save
-            #Store previous frames
-            frame_array_keep.append(frame_array)
-            if len(frame_array_keep) > frames_keep_amount + 1:
-                frame_array_keep.pop(0)
+            autotrigger(frame_array)
+            ##Store previous frames
+            #frame_array_keep.append(frame_array)
+            #if len(frame_array_keep) > frames_keep_amount + 1:
+            #    frame_array_keep.pop(0)
+            #    
+            #    ########################################################################################################################DEBUG
+            #    print(frame_array)
+            #    print("current")
+            #    sleep(1)
+            #    print(frame_array_keep[0])
+            #    print("oldest kept")
+            #    sleep(1)
+            #    print(frame_array_keep[5])
+            #    print("latest kept")
+            #    sleep(1)
+            #    print(frame_array_keep[2])
+            #    print("third  kept")
+            #    sleep(1)
             
             #Test pixels & save
-            if measurement_points(frame_array, pixel_trigger_array):
-                if not autosave_triggered:
-                    if PRINT_SAVE:
-                        print("Automatically saving previous picture...")
-                    autosave_triggered = True
-                    update_view(frame_array_keep[0])
-                    save_now()
-                    color_theme(COLOR_BG, COLOR_PIXEL_TRIGGER)
-                    update_view(frame_array_keep[0])
-                    if not alarm_state:
-                        color_theme(COLOR_FG, COLOR_BG)
-                    else:
-                        color_theme(COLOR_BG, COLOR_TEMP_ALARM)
-            else:
-                if autosave_triggered:
-                    autosave_triggered = False
+            #if measurement_points(frame_array, pixel_trigger_array):
+            #    if not autosave_triggered:
+            #        if PRINT_SAVE:
+            #            print("Automatically saving previous picture...")
+            #        autosave_triggered = True
+            #        update_view(frame_array_keep[0])
+            #        save_now()
+            #        color_theme(COLOR_BG, COLOR_PIXEL_TRIGGER)
+            #        update_view(frame_array_keep[0])
+            #        if not alarm_state:
+            #            color_theme(COLOR_FG, COLOR_BG)
+            #        else:
+            #            color_theme(COLOR_BG, COLOR_TEMP_ALARM)
+            #else:
+            #    if autosave_triggered:
+            #        autosave_triggered = False
                     
         
         if PRINT_CLEAR:
