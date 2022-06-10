@@ -197,31 +197,40 @@ def save_now():
 
 
 #Alarm##################################################################
+#Get CPU temp
 def temp_cpu():
     temp = os.popen("vcgencmd measure_temp").readline() #Read Raspberry Pi temp
     temp = float(temp.replace("temp=", "").replace("'C", "")) #Remove text and convert to float
     return temp
 
 
+#Protect from overheating
 def temp_cpu_protect():
     temp = temp_cpu()
     
-    if OVERHEAT_ALERT and temp >= OVERHEAT_ALERT_TEMP:
+    while temp >= OVERHEAT_ALERT_TEMP:
+        if OVERHEAT_POWEROFF and temp >= OVERHEAT_POWEROFF_TEMP:
+            print("Too hot! " + temp + "°C Powering off...")
+            os.system("poweroff")
+            sleep(10)
+            os.system("sudo poweroff")
+            os.system("pkill python")
+        
+        if not OVERHEAT_ALERT:
+            break #Exit loop now if alert disabled
+            
         print("Overheating! " + temp + " °C")
+        
         if OVERHEAT_ALERT_BUZZER:
             buzz(800, 5)
-            sleep(5)
             buzz(1200, 5)
-            sleep(5)
         
-    if OVERHEAT_POWEROFF and temp >= OVERHEAT_POWEROFF_TEMP:
-        print("Too hot! " + temp + "°C Powering off...")
-        os.system("poweroff")
-        sleep(10)
-        os.system("sudo poweroff")
-        os.system("pkill python")
-         
-    
+        color_theme("black", "red")
+        sleep(2)
+        color_theme("black", "yellow")
+        sleep(2)
+        
+
 
 #GPIO PWM buzzer
 GPIO.setup(GPIO_BUZZER, GPIO.OUT)
