@@ -225,9 +225,10 @@ def temp_cpu_protect():
             buzz(800, 5)
             buzz(1200, 5)
         
+        plt.title(f"CAMERA OVERHEATING! CPU: {temp:.1f} °C", color="black")
         color_theme("black", "red")
         sleep(2)
-        color_theme("black", "yellow")
+        color_theme("black", "orange")
         sleep(2)
         
 
@@ -309,7 +310,11 @@ cbar = fig.colorbar(therm1) #Colorbar for temps
 
 
 #Change color theme
+color_fg_set = COLOR_FG #Store for update_view() plt.title color
 def color_theme(fg, bg):
+    global color_fg_set
+    color_fg_set = fg
+    
     fig.patch.set_facecolor(bg) #Background color
     
     cbar.ax.yaxis.set_tick_params(color = fg) #Tick color
@@ -328,13 +333,13 @@ def update_view(array):
         
         #Text above view. Max, Avg, Min
         if not temp_range or temp_min > temp_range_min and temp_max < temp_range_max:
-            plt.title(f"Max Temp: {temp_max:.1f} °C    Avg Temp: {np.average(frame_array):.1f} °C    Min Temp: {temp_min:.1f} °C", color=COLOR_FG)
+            plt.title(f"Max Temp: {temp_max:.1f} °C    Avg Temp: {np.average(frame_array):.1f} °C    Min Temp: {temp_min:.1f} °C", color=color_fg_set)
         elif temp_min < temp_range_min and temp_max < temp_range_max:
-            plt.title(f"Max Temp: {temp_max:.1f} °C            *Min Temp: < {np.min(frame_array):.1f} °C  ({temp_min:.1f} °C)", color=COLOR_FG)
+            plt.title(f"Max Temp: {temp_max:.1f} °C            *Min Temp: < {np.min(frame_array):.1f} °C  ({temp_min:.1f} °C)", color=color_fg_set)
         elif temp_min > temp_range_min and temp_max > temp_range_max:
-            plt.title(f"*Max Temp: > {np.max(frame_array):.1f} °C  ({temp_max:.1f} °C)            Min Temp: {temp_min:.1f} °C", color=COLOR_FG)
+            plt.title(f"*Max Temp: > {np.max(frame_array):.1f} °C  ({temp_max:.1f} °C)            Min Temp: {temp_min:.1f} °C", color=color_fg_set)
         elif temp_min < temp_range_min and temp_max > temp_range_max:
-            plt.title(f"*Max Temp: > {np.max(frame_array):.1f} °C  ({temp_max:.1f} °C)        *Min Temp: < {np.min(frame_array):.1f} °C  ({temp_min:.1f} °C)", color=COLOR_FG)
+            plt.title(f"*Max Temp: > {np.max(frame_array):.1f} °C  ({temp_max:.1f} °C)        *Min Temp: < {np.min(frame_array):.1f} °C  ({temp_min:.1f} °C)", color=color_fg_set)
         
         plt.pause(0.001) #required
 
