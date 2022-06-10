@@ -41,7 +41,6 @@ temp_range_max = int(config.get("Temperature_Range", "range_max")) #300 °C
 test_pixels = eval(config.get("Monitor", "monitor_pixels_enable")) #Monitor pixels. If one or more are not in tolerance, turn screen red. Opptinally send PWM signal to a buzzer.
 test_buzzer = eval(config.get("Monitor", "monitor_buzzer_enable")) #PWM buzzer
 test_array = eval(config.get("Monitor", "monitor_pixels_array")) #Array of pixels to be tested
-#test_pixels_autosave = True
 
 #Auto trigger
 pixel_trigger = eval(config.get("Monitor", "monitor_autotrigger_enable")) #If ALL pixels in specified range. Save the oldest frame stored. See: frames_keep_amount. Set to 0 for current frame.
@@ -49,12 +48,12 @@ pixel_trigger_array = eval(config.get("Monitor", "monitor_autotrigger_array")) #
 frames_keep_amount = int(config.get("Monitor", "monitor_autotrigger_previous_frame")) #Number of past frames to keep.
 
 #Overheating alarm
-OVERHEAT_DETECTION = True
-OVERHEAT_ALERT = True
-OVERHEAT_ALERT_TEMP = 88
-OVERHEAT_ALERT_BUZZER = True
-OVERHEAT_POWEROFF = True
-OVERHEAT_POWEROFF_TEMP = 90
+OVERHEAT_DETECTION = True #Detect overheating
+OVERHEAT_ALERT = True #Alert when overheating
+OVERHEAT_ALERT_TEMP = 88 #Temperature to start alert
+OVERHEAT_ALERT_BUZZER = True #Alert with buzzer
+OVERHEAT_POWEROFF = True #Poweroff when too hot
+OVERHEAT_POWEROFF_TEMP = 90 #Poweroff temp
 
 #Window parameters
 TITLE = "Thermal Camera"
@@ -370,18 +369,7 @@ while True:
         
         if test_pixels: #If pixels should be tested
             temp_alarm(not measurement_points(frame_array, test_array)) #Check if alarm nets to be activated
-#            test_pixels_result = measurement_points(frame_array, test_array)
-#            temp_alarm(not test_pixels_result)
-#        
-#            if test_pixels_save:
-#                if not autosave_triggered:
-#                    if PRINT_SAVE:
-#                        print("Automatically saving current picture...")
-#                        autosave_triggered = True
-#                        save_now()
-#                else:
-#                    if test_pixels_result:
-#                        autosave_triggered = False
+            
         
         if save_queued: #save if queued
             save_now()
