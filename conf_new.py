@@ -21,7 +21,7 @@ config_file = configparser.ConfigParser()
 
 
 config_file.add_section("View")
-config_file.set("View", "interpolation", "gaussian #none, nearest, bilinear, bicubic, spline16, spline36, hanning, hamming, hermite, kaiser, quadric, catrom, gaussian, bessel, mitchell, sinc, lanczos")
+config_file.set("View", "interpolation", "gaussian #none, nearest, bilinear, bicubic, spline16, spline36, hanning, hamming, hermite, kaiser, quadric, catrom, gaussian, bessel, mitchell, sinc, lanczos    Example: https://matplotlib.org/stable/_images/sphx_glr_interpolation_methods_001.png")
 
 
 config_file.add_section("Accuracy")
