@@ -84,6 +84,7 @@ SAVE_PREFIX = str(config.get("Save", "save_prefix"))
 SAVE_SUFFIX = str(config.get("Save", "save_suffix"))
 SAVE_PATH = str(config.get("Save", "save_path"))
 SAVE_FILEFORMAT = str(config.get("Save", "save_format")) #ps, eps, pdf, pgf, png, raw, rgba, svg, svgz, jpg, jpeg, tif, tiff
+SAVE_TEMP_ALARM_VISIBLE = True
 
 #Console output
 PRINT_PERFORMANCE = True
@@ -148,10 +149,10 @@ def autotrigger(frame_current):
             save_now()
             color_theme(COLOR_BG, COLOR_PIXEL_TRIGGER)
             update_view(frame_store[0])
-            if not alarm_state:
-                color_theme(COLOR_FG, COLOR_BG)
-            else:
+            if alarm_state:
                 color_theme(COLOR_BG, COLOR_TEMP_ALARM)
+            else:
+                color_theme(COLOR_FG, COLOR_BG)
     else:
         if autosave_triggered:
             autosave_triggered = False
@@ -380,8 +381,11 @@ while True:
             #Visual que
             color_theme(COLOR_BG, COLOR_FG)
             update_view(frame_array)
-            color_theme(COLOR_FG, COLOR_BG)
-        
+            if alarm_state:
+                color_theme(COLOR_BG, COLOR_TEMP_ALARM)
+            else:
+                color_theme(COLOR_FG, COLOR_BG)
+                
         if pixel_trigger: #If pixels in specified range should trigger a save
             autotrigger(frame_array)
                     
