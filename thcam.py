@@ -86,7 +86,7 @@ SAVE_PATH = str(config.get("Save", "save_path"))
 SAVE_FILEFORMAT = str(config.get("Save", "save_format")) #ps, eps, pdf, pgf, png, raw, rgba, svg, svgz, jpg, jpeg, tif, tiff
 
 #Console output
-PRINT_FPS = True
+PRINT_PERFORMANCE = True
 PRINT_SAVE = True
 PRINT_PIXEL_TEST = False
 PRINT_DEBUG = True
@@ -357,8 +357,9 @@ def update_view(array):
 if PRINT_DEBUG:
     print("Starting loop")
     
-if PRINT_FPS:
+if PRINT_PERFORMANCE:
     time_start = time.monotonic() #Create initial time_start var
+    
 while True:
     try:
         if OVERHEAT_DETECTION:
@@ -371,26 +372,25 @@ while True:
         if test_pixels: #If pixels should be tested
             temp_alarm(not measurement_points(frame_array, test_array)) #Check if alarm nets to be activated
             
-        
         if save_queued: #save if queued
             save_now()
+            #Visual que
             color_theme(COLOR_BG, COLOR_FG)
             update_view(frame_array)
             color_theme(COLOR_FG, COLOR_BG)
         
-        
         if pixel_trigger: #If pixels in specified range should trigger a save
             autotrigger(frame_array)
                     
-        
         if PRINT_CLEAR:
             os.system("clear")
         
-        
-        if PRINT_FPS:
+        if PRINT_PERFORMANCE:
             time_stop = time.monotonic()
-            fps = round(1 / (time_stop - time_start), 1)
-            print("Sample Rate: " + str(fps) + " FPS")
+            frametime = time_stop - time_start
+            print("Frametime: " + str(round(frametime, 1)) + " s")
+            fps = 1 / frametime
+            print("Framerate: " + str(round(fps, 1)) + " fps")
             time_start = time.monotonic()
             
     except ValueError:
