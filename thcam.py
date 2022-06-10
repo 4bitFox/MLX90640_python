@@ -48,6 +48,14 @@ pixel_trigger = eval(config.get("Monitor", "monitor_autotrigger_enable")) #If AL
 pixel_trigger_array = eval(config.get("Monitor", "monitor_autotrigger_array")) #Which pixels to test.
 frames_keep_amount = int(config.get("Monitor", "monitor_autotrigger_previous_frame")) #Number of past frames to keep.
 
+#Overheating alarm
+OVERHEAT_DETECTION = True
+OVERHEAT_ALERT = True
+OVERHEAT_ALERT_TEMP = 88
+OVERHEAT_ALERT_BUZZER = True
+OVERHEAT_POWEROFF = True
+OVERHEAT_POWEROFF_TEMP = 90
+
 #Window parameters
 TITLE = "Thermal Camera"
 SCREEN_W = 800
@@ -116,13 +124,13 @@ def get_frame():
     
 
 autosave_triggered = False #Store autosave state
-frame_store = [] #Create array to store previous frames
+frame_store = [] #Create list to store previous frames
 def autotrigger(frame_current):
     global autosave_triggered
     global frame_store
     
     #Store previous frames
-    frame_store.append(frame_current.copy())
+    frame_store.append(frame_current.copy()) #Append current frame to the end of list. ".copy()" required!
     if len(frame_store) > frames_keep_amount + 1:
         frame_store.pop(0)
             
@@ -189,6 +197,32 @@ def save_now():
 
 
 #Alarm##################################################################
+def temp_cpu():
+    temp = os.popen("vcgencmd measure_temp").readline() #Read Raspberry Pi temp
+    temp = float(temp.replace("temp=", "").replace("'C", "")) #Remove text and convert to float
+    return temp
+
+
+def temp_cpu_protect():
+    temp = temp_cpu()
+    
+    if OVERHEAT_ALERT and temp >= OVERHEAT_ALERT_TEMP:
+        print("Overheating! " + temp + " °C")
+        if OVERHEAT_ALERT_BUZZER:
+            buzz(800, 5)
+            sleep(5)
+            buzz(1200, 5)
+            sleep(5)
+        
+    if OVERHEAT_POWEROFF and temp >= OVERHEAT_POWEROFF_TEMP:
+        print("Too hot! " + temp + "°C Powering off...")
+        os.system("poweroff")
+        sleep(10)
+        os.system("sudo poweroff")
+        os.system("pkill python")
+         
+    
+
 #GPIO PWM buzzer
 GPIO.setup(GPIO_BUZZER, GPIO.OUT)
 def buzz(freq, time):
@@ -305,6 +339,9 @@ t_array = [] #Create array to store refresh rate
 while True:
     t1 = time.monotonic() #for calculating refresh rete
     try:
+        if OVERHEAT_DETECTION:
+            temp_cpu_protect()
+        
         frame_array, temp_min, temp_max = get_frame()
         
         update_view(frame_array) #Update view
