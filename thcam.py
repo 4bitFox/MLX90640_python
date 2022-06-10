@@ -208,6 +208,7 @@ def temp_cpu():
 def temp_cpu_protect():
     temp = temp_cpu()
     
+    overheat_alert_triggered = False
     while temp >= OVERHEAT_ALERT_TEMP:
         if OVERHEAT_POWEROFF and temp >= OVERHEAT_POWEROFF_TEMP:
             print("Too hot! " + temp + "°C Powering off...")
@@ -219,17 +220,24 @@ def temp_cpu_protect():
         if not OVERHEAT_ALERT:
             break #Exit loop now if alert disabled
             
+        overheat_alert_triggered = True
+            
         print("Overheating! " + temp + " °C")
         
         if OVERHEAT_ALERT_BUZZER:
             buzz(800, 5)
             buzz(1200, 5)
         
-        plt.title(f"CAMERA OVERHEATING! CPU: {temp:.1f} °C", color="black")
+        plt.title(f"CAMERA OVERHEATING! CPU: {temp:.1f} °C", color="black") #Text above preview
+        color_theme("black", "orang")
+        sleep(2)
         color_theme("black", "red")
         sleep(2)
-        color_theme("black", "orange")
-        sleep(2)
+        plt.title(f"CAMERA OVERHEATING! CPU: {temp:.1f} °C", color="COLOR_FG") #Text above preview
+    
+    if overheat_alert_triggered: #Return to normal operation if alert has been triggered
+        overheat_alert_triggered = False
+        color_theme(COLOR_FG, COLOR_BG)
         
 
 
