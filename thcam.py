@@ -180,7 +180,7 @@ def datetime():
 
 #Queue a save
 save_queued = False #Store save queued state
-save_queued_frame = frame_array_new #Store queued frame
+save_queued_frame = np.reshape(frame_array_new, SENSOR_SHAPE) #Store queued frame
 def save_queue(frame): #Queue Save
     global save_queued
     global save_queued_frame
@@ -246,9 +246,10 @@ def temp_cpu_protect():
     temp = temp_cpu()
     
     overheat_alert_triggered = False
-    while temp >= OVERHEAT_ALERT_TEMP:
+    #while temp >= OVERHEAT_ALERT_TEMP:
+    while True:
         if OVERHEAT_POWEROFF and temp >= OVERHEAT_POWEROFF_TEMP:
-            print("Too hot! " + temp + "°C Powering off...")
+            print("Too hot! " + str(temp) + "°C Powering off...")
             os.system("poweroff")
             sleep(10)
             os.system("sudo poweroff")
@@ -259,18 +260,22 @@ def temp_cpu_protect():
             
         overheat_alert_triggered = True
             
-        print("Overheating! " + temp + " °C")
+        print("Overheating! " + str(temp) + " °C")
         
         if OVERHEAT_ALERT_BUZZER:
             buzz(800, 5)
             buzz(1200, 5)
         
-        plt.title(f"CAMERA OVERHEATING! CPU: {temp:.1f} °C", color="black") #Text above preview
-        color_theme("black", "orang")
-        sleep(2)
+        color_theme("black", "orange")
+        update_view(frame_array)
+        plt.title(f"CAMERA OVERHEATING! CPU: {str(temp)} °C", color="black") #Text above preview
+        plt.pause(0.001)
+        sleep(1)
         color_theme("black", "red")
-        sleep(2)
-        plt.title(f"CAMERA OVERHEATING! CPU: {temp:.1f} °C", color="COLOR_FG") #Text above preview
+        update_view(frame_array)
+        plt.title(f"CAMERA OVERHEATING! CPU: {str(temp)} °C", color="black") #Text above preview
+        plt.pause(0.001)
+        sleep(1)
     
     if overheat_alert_triggered: #Return to normal operation if alert has been triggered
         overheat_alert_triggered = False
@@ -373,9 +378,6 @@ if PRINT_PERFORMANCE:
     
 while True:
     try:
-        if OVERHEAT_DETECTION:
-            temp_cpu_protect()
-        
         frame_array, temp_min, temp_max = get_frame()
         
         if test_pixels: #If pixels should be tested
@@ -399,6 +401,9 @@ while True:
             fps = 1 / frametime
             print("Framerate: " + str(round(fps, 1)) + " fps")
             time_start = time.monotonic()
+        
+        if OVERHEAT_DETECTION:
+            temp_cpu_protect()
             
     except ValueError:
         if PRINT_VALUEERROR:
