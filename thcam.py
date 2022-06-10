@@ -75,7 +75,6 @@ GPIO_BUZZER = 13
 COLOR_BG = "black"
 COLOR_FG = "white"
 COLOR_TEMP_ALARM = "red"
-COLOR_PIXEL_TRIGGER = "yellow"
 interpolation = str(config.get("View", "interpolation")) #none, nearest, bilinear, bicubic, spline16, spline36, hanning, hamming, hermite, kaiser, quadric, catrom, gaussian, bessel, mitchell, sinc, lanczos
 fullscreen = False
 
@@ -92,7 +91,7 @@ PRINT_SAVE = True
 PRINT_PIXEL_TEST = False
 PRINT_DEBUG = True
 PRINT_VALUEERROR = True
-PRINT_CLEAR = True
+PRINT_CLEAR = False
 
 
 
@@ -130,6 +129,7 @@ frame_store = [] #Create list to store previous frames
 def autotrigger(frame_current):
     global autosave_triggered
     global frame_store
+    global save_queued
     
     #Store previous frames
     if frames_keep_amount == 0:
@@ -145,14 +145,7 @@ def autotrigger(frame_current):
             if PRINT_SAVE:
                 print("Automatically saving picture...")
             autosave_triggered = True
-            update_view(frame_store[0])
-            save_now()
-            color_theme(COLOR_BG, COLOR_PIXEL_TRIGGER)
-            update_view(frame_store[0])
-            if alarm_state:
-                color_theme(COLOR_BG, COLOR_TEMP_ALARM)
-            else:
-                color_theme(COLOR_FG, COLOR_BG)
+            save_queue(frame_store[0])
     else:
         if autosave_triggered:
             autosave_triggered = False
@@ -164,7 +157,10 @@ if PRINT_DEBUG:
     print("Setting up GPIO buttons")
 #GPIO capture button
 def trigger_callback(pin): #called when button pressed
-    save_queue()
+    try:
+        save_queue(frame_array)
+    except NameError: #If button is pressed to early, frame_array is not defined yet. Catch and ignore :)
+        pass
     if PRINT_DEBUG:
         print("GPIO " + str(pin) + " Button pressed.")
         
@@ -184,20 +180,31 @@ def datetime():
 
 #Queue a save
 save_queued = False #Store save queued state
-def save_queue():
+save_queued_frame = frame_array_new #Store queued frame
+def save_queue(frame): #Queue Save
     global save_queued
+    global save_queued_frame
     save_queued = True
+    save_queued_frame = frame.copy()
    
     
 #Save now. Only call from within the loop!
-def save_now():
+def save_now(frame):
     global save_queued
     filename = SAVE_PATH + "/" + SAVE_PREFIX + datetime() + SAVE_SUFFIX + "." + SAVE_FILEFORMAT
-    plt.savefig(filename, format = SAVE_FILEFORMAT, facecolor = COLOR_BG)
+    color_theme(COLOR_BG, COLOR_FG)
+    update_view(frame)
+    if SAVE_TEMP_ALARM_VISIBLE and alarm_state:
+        color_theme(COLOR_BG, COLOR_TEMP_ALARM)
+    else:
+        color_theme(COLOR_FG, COLOR_BG)
+    update_view(frame)
+    plt.savefig(filename, format = SAVE_FILEFORMAT)
     if PRINT_SAVE:
         print("Saved " + filename)
+    if alarm_state:
+        color_theme(COLOR_BG, COLOR_TEMP_ALARM)
     save_queued = False
-    sleep(1)
 
 
 
@@ -371,23 +378,16 @@ while True:
         
         frame_array, temp_min, temp_max = get_frame()
         
-        update_view(frame_array) #Update view
-        
         if test_pixels: #If pixels should be tested
             temp_alarm(not measurement_points(frame_array, test_array)) #Check if alarm nets to be activated
             
-        if save_queued: #save if queued
-            save_now()
-            #Visual que
-            color_theme(COLOR_BG, COLOR_FG)
-            update_view(frame_array)
-            if alarm_state:
-                color_theme(COLOR_BG, COLOR_TEMP_ALARM)
-            else:
-                color_theme(COLOR_FG, COLOR_BG)
-                
         if pixel_trigger: #If pixels in specified range should trigger a save
             autotrigger(frame_array)
+            
+        if save_queued: #save if queued
+            save_now(save_queued_frame)
+        else:
+            update_view(frame_array) #save_now() already updates view.
                     
         if PRINT_CLEAR:
             os.system("clear")
