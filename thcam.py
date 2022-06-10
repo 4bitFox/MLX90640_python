@@ -107,6 +107,7 @@ mlx = adafruit_mlx90640.MLX90640(i2c) #Start MLX90640
 mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ #Refresh rate 1, 2, 4, 8, 16, 32, 64 HZ possible
 
 
+#Get newest frame
 e_comp = EMISSIVITY_BASELINE / emissivity #Emissivity compensation
 frame_array_new = np.zeros((SENSOR_SHAPE[0]*SENSOR_SHAPE[1], )) #setup array for storing all 768 temperatures
 def get_frame():
@@ -122,6 +123,7 @@ def get_frame():
     return frame_array, temp_min, temp_max
     
 
+#Automatically trigger a photo
 autosave_triggered = False #Store autosave state
 frame_store = [] #Create list to store previous frames
 def autotrigger(frame_current):
@@ -131,7 +133,7 @@ def autotrigger(frame_current):
     #Store previous frames
     frame_store.append(frame_current.copy()) #Append current frame to the end of list. ".copy()" required!
     if len(frame_store) > frames_keep_amount + 1:
-        frame_store.pop(0)
+        frame_store.pop(0) #Delete the oldest frame
             
     #Test pixels & save
     if measurement_points(frame_current, pixel_trigger_array):
@@ -166,8 +168,8 @@ def trigger_setup(pin): #Add pin to detect button press
     GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP) #Button
     GPIO.add_event_detect(pin, GPIO.FALLING, callback=trigger_callback)
 
-trigger_setup(GPIO_TRIGGER_1)
-trigger_setup(GPIO_TRIGGER_2)
+trigger_setup(GPIO_TRIGGER_1) #Button 1
+trigger_setup(GPIO_TRIGGER_2) #Button 2
 
 
 #Get datetime
@@ -196,6 +198,31 @@ def save_now():
 
 
 #Alarm##################################################################
+#GPIO PWM buzzer
+GPIO.setup(GPIO_BUZZER, GPIO.OUT)
+def buzz(freq, time):
+    buzzer = GPIO.PWM(GPIO_BUZZER, freq)
+    buzzer.start(50) #Start with 50% duty cycle
+    sleep(time)
+    buzzer.stop()
+        
+
+#Sound alarm when alarm = True
+alarm_state = False #Store alarm state
+def temp_alarm(alarm):
+    global alarm_state
+    if alarm:
+        if not alarm_state:
+            color_theme(COLOR_BG, COLOR_TEMP_ALARM)
+            if test_buzzer == True:
+                buzz(800, 5)
+            alarm_state = True
+    else:
+        if alarm_state:
+            color_theme(COLOR_FG, COLOR_BG)
+            alarm_state = False
+  
+
 #Get CPU temp
 def temp_cpu():
     temp = os.popen("vcgencmd measure_temp").readline() #Read Raspberry Pi temp
@@ -238,36 +265,10 @@ def temp_cpu_protect():
         overheat_alert_triggered = False
         color_theme(COLOR_FG, COLOR_BG)
         
-
-
-#GPIO PWM buzzer
-GPIO.setup(GPIO_BUZZER, GPIO.OUT)
-def buzz(freq, time):
-    buzzer = GPIO.PWM(GPIO_BUZZER, freq)
-    buzzer.start(50) #Start with 50% duty cycle
-    sleep(time)
-    buzzer.stop()
         
-
-#Sound alarm when alarm = True
-alarm_state = False #Store alarm state
-def temp_alarm(alarm):
-    global alarm_state
-    if alarm:
-        if not alarm_state:
-            color_theme(COLOR_BG, COLOR_TEMP_ALARM)
-            if test_buzzer == True:
-                buzz(800, 5)
-            alarm_state = True
-    else:
-        if alarm_state:
-            color_theme(COLOR_FG, COLOR_BG)
-            alarm_state = False
-  
-
-
+        
 #Test pixels############################################################
-#Tests one if pixel is in tolerance and returns result. Called from measurement_points()
+#Tests if pixel is in tolerance and returns result. Called from measurement_points()
 def test(pixel, row, column, temp_min, temp_max):
     if pixel[row, column] > temp_min and pixel[row, column] < temp_max:
         if PRINT_PIXEL_TEST:
@@ -356,9 +357,9 @@ def update_view(array):
 if PRINT_DEBUG:
     print("Starting loop")
     
-t_array = [] #Create array to store refresh rate
+if PRINT_FPS:
+    time_start = time.monotonic() #Create initial time_start var
 while True:
-    t1 = time.monotonic() #for calculating refresh rete
     try:
         if OVERHEAT_DETECTION:
             temp_cpu_protect()
@@ -385,12 +386,15 @@ while True:
         if PRINT_CLEAR:
             os.system("clear")
         
+        
         if PRINT_FPS:
-            t_array.append(time.monotonic()-t1)
-            print("Sample Rate: {0:2.1f}fps".format(len(t_array)/np.sum(t_array)))
+            time_stop = time.monotonic()
+            fps = round(1 / (time_stop - time_start), 1)
+            print("Sample Rate: " + str(fps) + " FPS")
+            time_start = time.monotonic()
             
     except ValueError:
         if PRINT_VALUEERROR:
             print("ValueError")
              
-        continue # if error, just read again
+        continue # if error, try again
