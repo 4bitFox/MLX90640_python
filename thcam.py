@@ -109,6 +109,7 @@ mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ #Refresh rate 1, 2
 
 #Get newest frame
 e_comp = EMISSIVITY_BASELINE / emissivity #Emissivity compensation
+frame_empty = np.zeros((SENSOR_SHAPE[0], SENSOR_SHAPE[1]))
 frame_array_new = np.zeros((SENSOR_SHAPE[0]*SENSOR_SHAPE[1], )) #setup array for storing all 768 temperatures
 def get_frame():
     mlx.getFrame(frame_array_new) #read MLX temperatures into variable
@@ -180,7 +181,7 @@ def datetime():
 
 #Queue a save
 save_queued = False #Store save queued state
-save_queued_frame = np.reshape(frame_array_new, SENSOR_SHAPE) #Store queued frame
+save_queued_frame = frame_empty #Store queued frame
 def save_queue(frame): #Queue Save
     global save_queued
     global save_queued_frame
@@ -246,8 +247,7 @@ def temp_cpu_protect():
     temp = temp_cpu()
     
     overheat_alert_triggered = False
-    #while temp >= OVERHEAT_ALERT_TEMP:
-    while True:
+    while temp >= OVERHEAT_ALERT_TEMP:
         if OVERHEAT_POWEROFF and temp >= OVERHEAT_POWEROFF_TEMP:
             print("Too hot! " + str(temp) + "°C Powering off...")
             os.system("poweroff")
@@ -262,20 +262,20 @@ def temp_cpu_protect():
             
         print("Overheating! " + str(temp) + " °C")
         
-        if OVERHEAT_ALERT_BUZZER:
-            buzz(800, 5)
-            buzz(1200, 5)
-        
         color_theme("black", "orange")
-        update_view(frame_array)
+        update_view(frame_empty)
         plt.title(f"CAMERA OVERHEATING! CPU: {str(temp)} °C", color="black") #Text above preview
         plt.pause(0.001)
         sleep(1)
         color_theme("black", "red")
-        update_view(frame_array)
+        update_view(frame_empty)
         plt.title(f"CAMERA OVERHEATING! CPU: {str(temp)} °C", color="black") #Text above preview
         plt.pause(0.001)
-        sleep(1)
+        
+        if OVERHEAT_ALERT_BUZZER:
+            buzz(800, 5)
+            buzz(1200, 5)
+            
     
     if overheat_alert_triggered: #Return to normal operation if alert has been triggered
         overheat_alert_triggered = False
