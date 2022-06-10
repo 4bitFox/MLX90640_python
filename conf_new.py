@@ -17,7 +17,7 @@ config_file_format = "ini"
 
 
 #Create Object
-config_file = configparser.ConfigParser()
+config_file = configparser.ConfigParser(inline_comment_prefixes=" #")
 
 
 config_file.add_section("View")
