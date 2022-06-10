@@ -15,7 +15,7 @@ import sys
 #Read config file
 try:
     config_file = sys.argv[1]
-    config = configparser.ConfigParser()
+    config = configparser.ConfigParser(inline_comment_prefixes=" #")
     config.read(config_file)
 
 #Catch no config file    
