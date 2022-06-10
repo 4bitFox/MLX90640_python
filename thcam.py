@@ -131,15 +131,18 @@ def autotrigger(frame_current):
     global frame_store
     
     #Store previous frames
-    frame_store.append(frame_current.copy()) #Append current frame to the end of list. ".copy()" required!
-    if len(frame_store) > frames_keep_amount + 1:
-        frame_store.pop(0) #Delete the oldest frame
-            
+    if frames_keep_amount == 0:
+        frame_store = [frame_current]
+    else:
+        frame_store.append(frame_current.copy()) #Append current frame to the end of list. ".copy()" required!
+        if len(frame_store) > frames_keep_amount + 1:
+            frame_store.pop(0) #Delete the oldest frame
+    
     #Test pixels & save
     if measurement_points(frame_current, pixel_trigger_array):
         if not autosave_triggered:
             if PRINT_SAVE:
-                print("Automatically saving previous picture...")
+                print("Automatically saving picture...")
             autosave_triggered = True
             update_view(frame_store[0])
             save_now()
