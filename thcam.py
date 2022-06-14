@@ -180,6 +180,11 @@ def datetime():
 
 
 def save_rawfile(frame, filename):
+    frame = str(tuple(frame))#.copy()
+    frame = frame.replace("\n      ", "").replace("  ,", ",").replace(" ,", ",").replace("(", "").replace(")", "").replace("array", "")
+    frame = "[" + frame + "]"
+    
+    
     rawfile = configparser.ConfigParser(inline_comment_prefixes=" #")
     
     rawfile.add_section("File")
@@ -190,7 +195,7 @@ def save_rawfile(frame, filename):
     rawfile.set("Settings", "emissivity_baseline", str(EMISSIVITY_BASELINE))
     
     rawfile.add_section("Frame")
-    rawfile.set("Frame", "frame", str(frame))
+    rawfile.set("Frame", "frame", frame)
     
     #Save file
     with open(filename + ".thcam", "w") as rawfileObj:
