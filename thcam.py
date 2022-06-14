@@ -179,6 +179,26 @@ def datetime():
     return dt
 
 
+def save_rawfile(frame, filename):
+    rawfile = configparser.ConfigParser(inline_comment_prefixes=" #")
+    
+    rawfile.add_section("File")
+    rawfile.set("File", "version", "1 #DO NOT CHANGE!") #Version of file format. Tells the viever to read the file differently, depending on what version it is.
+    
+    rawfile.add_section("Settings")
+    rawfile.set("Settings", "emissivity", str(emissivity))
+    rawfile.set("Settings", "emissivity_baseline", str(EMISSIVITY_BASELINE))
+    
+    rawfile.add_section("Frame")
+    rawfile.set("Frame", "frame", str(frame))
+    
+    #Save file
+    with open(filename + ".thcam", "w") as rawfileObj:
+        rawfile.write(rawfileObj)
+        rawfileObj.flush()
+        rawfileObj.close()
+
+
 #Queue a save
 save_queued = False #Store save queued state
 save_queued_frame = frame_empty #Store queued frame
@@ -192,7 +212,8 @@ def save_queue(frame): #Queue Save
 #Save now. Only call from within the loop!
 def save_now(frame):
     global save_queued
-    filename = SAVE_PATH + "/" + SAVE_PREFIX + datetime() + SAVE_SUFFIX + "." + SAVE_FILEFORMAT
+    filename = SAVE_PATH + "/" + SAVE_PREFIX + datetime() + SAVE_SUFFIX# + "." + SAVE_FILEFORMAT
+    save_rawfile(frame, filename)
     color_theme(COLOR_BG, COLOR_FG)
     update_view(frame)
     if SAVE_TEMP_ALARM_VISIBLE and alarm_state:
@@ -200,9 +221,9 @@ def save_now(frame):
     else:
         color_theme(COLOR_FG, COLOR_BG)
     update_view(frame)
-    plt.savefig(filename, format = SAVE_FILEFORMAT)
+    plt.savefig(filename + "." + SAVE_FILEFORMAT, format = SAVE_FILEFORMAT)
     if PRINT_SAVE:
-        print("Saved " + filename)
+        print("Saved " + filename + "." + SAVE_FILEFORMAT)
     if alarm_state:
         color_theme(COLOR_BG, COLOR_TEMP_ALARM)
     save_queued = False
