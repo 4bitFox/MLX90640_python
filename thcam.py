@@ -118,7 +118,7 @@ def get_frame():
     temp_min = np.min(frame_array) #Store min temp
     temp_max = np.max(frame_array) #Store max temp
     if temp_range: #If temperatures above and below threshhold should be ignored
-        array = np.clip(frame_array, temp_range_min, temp_range_max) #Clip temps above or below specified value
+        frame_array = np.clip(frame_array, temp_range_min, temp_range_max) #Clip temps above or below specified value
     frame_array = np.reshape(frame_array, SENSOR_SHAPE) #Reshape array to Sensor size. Results in 2D array
     frame_array = np.fliplr(frame_array) #Flip array left to right
     return frame_array, temp_min, temp_max
@@ -180,9 +180,10 @@ def datetime():
 
 
 def save_rawfile(frame, filename):
-    frame = str(tuple(frame))#.copy()
-    frame = frame.replace("\n      ", "").replace("  ,", ",").replace(" ,", ",").replace("(", "").replace(")", "").replace("array", "")
-    frame = "[" + frame + "]"
+    #Convert array to stringified list
+    frame = str(tuple(frame))
+    frame = frame.replace("\n      ", "").replace("  ,", ",").replace(" ,", ",").replace("(", "").replace(")", "").replace("array", "") #Remove unwanted parts
+    frame = "[" + frame + "]" #Add missing brackets
     
     
     rawfile = configparser.ConfigParser(inline_comment_prefixes=" #")
@@ -196,6 +197,8 @@ def save_rawfile(frame, filename):
     
     rawfile.add_section("Frame")
     rawfile.set("Frame", "frame", frame)
+    rawfile.set("Frame", "temp_min", str(temp_min))
+    rawfile.set("Frame", "temp_max", str(temp_max))
     
     #Save file
     with open(filename + ".thcam", "w") as rawfileObj:
@@ -381,15 +384,18 @@ def update_view(array):
         
         cbar.update_normal(therm1) #update colorbar
         
+        temp_min_clipped = np.min(array)
+        temp_max_clipped = np.max(array)
+        
         #Text above view. Max, Avg, Min
         if not temp_range or temp_min > temp_range_min and temp_max < temp_range_max:
-            plt.title(f"Max Temp: {temp_max:.1f} °C    Avg Temp: {np.average(frame_array):.1f} °C    Min Temp: {temp_min:.1f} °C", color=color_fg_set)
+            plt.title(f"Max Temp: {temp_max:.1f} °C    Avg Temp: {np.average(array):.1f} °C    Min Temp: {temp_min:.1f} °C", color=color_fg_set)
         elif temp_min < temp_range_min and temp_max < temp_range_max:
-            plt.title(f"Max Temp: {temp_max:.1f} °C            *Min Temp: < {np.min(frame_array):.1f} °C  ({temp_min:.1f} °C)", color=color_fg_set)
+            plt.title(f"Max Temp: {temp_max:.1f} °C            *Min Temp: < {temp_min_clipped:.1f} °C  ({temp_min:.1f} °C)", color=color_fg_set)
         elif temp_min > temp_range_min and temp_max > temp_range_max:
-            plt.title(f"*Max Temp: > {np.max(frame_array):.1f} °C  ({temp_max:.1f} °C)            Min Temp: {temp_min:.1f} °C", color=color_fg_set)
+            plt.title(f"*Max Temp: > {temp_max_clipped:.1f} °C  ({temp_max:.1f} °C)            Min Temp: {temp_min:.1f} °C", color=color_fg_set)
         elif temp_min < temp_range_min and temp_max > temp_range_max:
-            plt.title(f"*Max Temp: > {np.max(frame_array):.1f} °C  ({temp_max:.1f} °C)        *Min Temp: < {np.min(frame_array):.1f} °C  ({temp_min:.1f} °C)", color=color_fg_set)
+            plt.title(f"*Max Temp: > {temp_max_clipped:.1f} °C  ({temp_max:.1f} °C)        *Min Temp: < {temp_min_clipped:.1f} °C  ({temp_min:.1f} °C)", color=color_fg_set)
         
         plt.pause(0.001) #required
 
