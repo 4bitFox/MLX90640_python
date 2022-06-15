@@ -396,11 +396,11 @@ def update_view(array):
         cbar.update_normal(therm1) #update colorbar
         
         #Text above view. Max, Avg, Min
-        if not temp_range or temp_min > temp_range_min and temp_max < temp_range_max:
+        if not temp_range or temp_min >= temp_range_min and temp_max <= temp_range_max:
             plt.title(f"Max Temp: {temp_max:.1f} °C    Avg Temp: {np.average(array):.1f} °C    Min Temp: {temp_min:.1f} °C", color=color_fg_set)
-        elif temp_min < temp_range_min and temp_max < temp_range_max:
+        elif temp_min < temp_range_min and temp_max <= temp_range_max:
             plt.title(f"Max Temp: {temp_max:.1f} °C            *Min Temp: < {temp_range_min:.1f} °C  ({temp_min:.1f} °C)", color=color_fg_set)
-        elif temp_min > temp_range_min and temp_max > temp_range_max:
+        elif temp_min >= temp_range_min and temp_max > temp_range_max:
             plt.title(f"*Max Temp: > {temp_range_max:.1f} °C  ({temp_max:.1f} °C)            Min Temp: {temp_min:.1f} °C", color=color_fg_set)
         elif temp_min < temp_range_min and temp_max > temp_range_max:
             plt.title(f"*Max Temp: > {temp_range_max:.1f} °C  ({temp_max:.1f} °C)        *Min Temp: < {temp_range_min:.1f} °C  ({temp_min:.1f} °C)", color=color_fg_set)
