@@ -61,8 +61,8 @@ if FILE_VERSION == 1:
     EMISSIVITY_BASELINE = float(raw.get("Settings", "emissivity_baseline"))
     
     frame_array = np.array(eval(raw.get("Frame", "frame")))
-    temp_min = float(raw.get("Frame", "temp_min"))
-    temp_max = float(raw.get("Frame", "temp_max"))
+    temp_range_min = float(raw.get("Frame", "temp_min"))
+    temp_range_max = float(raw.get("Frame", "temp_max"))
     
     SENSOR_SHAPE = (np.shape(frame_array)) #resolution of frame
     
@@ -79,16 +79,21 @@ else:
 if PRINT_DEBUG:
     print("Setting up Matplotlib")
 plt.ion() #Interactive plotting
-fig,ax = plt.subplots(figsize=(12, 7)) #Subplots
-fig.canvas.manager.set_window_title(TITLE) #Window title
-fig.canvas.manager.toolbar.hide() #Hide toolbar
-fig.subplots_adjust(left=SPACE_L, bottom=SPACE_B, right=SPACE_R, top=SPACE_T) #Adjust space to border
+try:
+    fig,ax = plt.subplots(figsize=(12, 7)) #Subplots
+    fig.canvas.manager.set_window_title(TITLE) #Window title
+    fig.canvas.manager.toolbar.hide() #Hide toolbar
+    fig.subplots_adjust(left=SPACE_L, bottom=SPACE_B, right=SPACE_R, top=SPACE_T) #Adjust space to border
+    if fullscreen:
+        fig.canvas.manager.full_screen_toggle() #Fullscreen
+    else:
+        fig.canvas.manager.window.resize(SCREEN_W, SCREEN_H) #Resize to fit screen
+except AttributeError:
+    pass
+    #print("Matplotlib AttributeError") #Windows
+    
 plt.xticks([]) #Hide xticks
 plt.yticks([]) #Hide yticks
-if fullscreen:
-    fig.canvas.manager.full_screen_toggle() #Fullscreen
-else:
-    fig.canvas.manager.window.resize(SCREEN_W, SCREEN_H) #Resize to fit screen
 
 
 #Preview and Tepmerature bar
@@ -114,22 +119,33 @@ color_theme(COLOR_FG, COLOR_BG)
 #Update view
 def update_view(array):
         therm1.set_data(array) #update view
-        therm1.set_clim(vmin=np.min(array), vmax=np.max(array)) #set bounds
+        
+        temp_min = np.min(array)
+        temp_max = np.max(array)
+        
+        if temp_min <= temp_range_min:
+            tempbar_min = temp_range_min
+        else:
+            tempbar_min = temp_min
+            
+        if temp_max >= temp_range_max:
+            tempbar_max = temp_range_max
+        else:
+            tempbar_max = temp_max
+        
+        therm1.set_clim(vmin = tempbar_min, vmax = tempbar_max) #set bounds
         
         cbar.update_normal(therm1) #update colorbar
         
-        temp_min_clipped = np.min(array)
-        temp_max_clipped = np.max(array)
-        
         #Text above view. Max, Avg, Min
-        if temp_min >= temp_min_clipped and temp_max < temp_max_clipped:
+        if temp_min >= temp_range_min and temp_max <= temp_range_max:
             plt.title(f"Max Temp: {temp_max:.1f} °C    Avg Temp: {np.average(array):.1f} °C    Min Temp: {temp_min:.1f} °C", color=color_fg_set)
-        elif temp_min < temp_min_clipped and temp_max < temp_max_clipped:
-            plt.title(f"Max Temp: {temp_max:.1f} °C            *Min Temp: < {temp_min_clipped:.1f} °C  ({temp_min:.1f} °C)", color=color_fg_set)
-        elif temp_min > temp_min_clipped and temp_max > temp_max_clipped:
-            plt.title(f"*Max Temp: > {temp_max_clipped:.1f} °C  ({temp_max:.1f} °C)            Min Temp: {temp_min:.1f} °C", color=color_fg_set)
-        elif temp_min < temp_min_clipped and temp_max > temp_max_clipped:
-            plt.title(f"*Max Temp: > {temp_max_clipped:.1f} °C  ({temp_max:.1f} °C)        *Min Temp: < {temp_min_clipped:.1f} °C  ({temp_min:.1f} °C)", color=color_fg_set)
+        elif temp_min < temp_range_min and temp_max <= temp_range_max:
+            plt.title(f"Max Temp: {temp_max:.1f} °C            *Min Temp: < {temp_range_min:.1f} °C  ({temp_min:.1f} °C)", color=color_fg_set)
+        elif temp_min >= temp_range_min and temp_max > temp_range_max:
+            plt.title(f"*Max Temp: > {temp_range_max:.1f} °C  ({temp_max:.1f} °C)            Min Temp: {temp_min:.1f} °C", color=color_fg_set)
+        elif temp_min < temp_range_min and temp_max > temp_range_max:
+            plt.title(f"*Max Temp: > {temp_range_max:.1f} °C  ({temp_max:.1f} °C)        *Min Temp: < {temp_range_min:.1f} °C  ({temp_min:.1f} °C)", color=color_fg_set)
         
         plt.pause(0.001) #required
 
@@ -137,7 +153,7 @@ def update_view(array):
 
 #Display################################################################
 if PRINT_DEBUG:
-    print("Display")
+    print("Display Image")
     
 update_view(frame_array)
 if export == True or export == "-e" or export == "-s" or export == "--export" or export == "--save":
