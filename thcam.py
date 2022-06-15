@@ -115,9 +115,13 @@ def get_frame():
     mlx.getFrame(frame_array_new) #read MLX temperatures into variable
     frame_array = frame_array_new #Store read frame into variable 
     frame_array *= e_comp #Correct temperature
+    temp_min = np.min(frame_array) #Store min temp
+    temp_max = np.max(frame_array) #Store max temp
+    if temp_range: #If temperatures above and below threshhold should be ignored
+        array = np.clip(frame_array, temp_range_min, temp_range_max) #Clip temps above or below specified value
     frame_array = np.reshape(frame_array, SENSOR_SHAPE) #Reshape array to Sensor size. Results in 2D array
     frame_array = np.fliplr(frame_array) #Flip array left to right
-    return frame_array
+    return frame_array, temp_min, temp_max
     
 
 #Automatically trigger a photo
@@ -175,35 +179,6 @@ def datetime():
     return dt
 
 
-def save_rawfile(frame, filename):
-    #Convert array to stringified list
-    frame = str(tuple(frame))
-    #frame = .replace("  ,", ",").replace(" ,", ",")
-    frame = frame.replace("\n", "").replace(". ", "").replace(" ", "").replace("(", "").replace(")", "").replace("array", "").replace(",", ", ") #Remove unwanted parts
-    frame = "[" + frame + "]" #Add missing brackets
-    
-    
-    rawfile = configparser.ConfigParser(inline_comment_prefixes=" #")
-    
-    rawfile.add_section("File")
-    rawfile.set("File", "version", "1 #DO NOT CHANGE!") #Version of file format. Tells the viever to read the file differently, depending on what version it is.
-    
-    rawfile.add_section("Settings")
-    rawfile.set("Settings", "emissivity", str(emissivity))
-    rawfile.set("Settings", "emissivity_baseline", str(EMISSIVITY_BASELINE))
-    
-    rawfile.add_section("Frame")
-    rawfile.set("Frame", "frame", frame)
-    rawfile.set("Frame", "temp_min", str(temp_range_min))
-    rawfile.set("Frame", "temp_max", str(temp_range_max))
-    
-    #Save file
-    with open(filename + ".thcam", "w") as rawfileObj:
-        rawfile.write(rawfileObj)
-        rawfileObj.flush()
-        rawfileObj.close()
-
-
 #Queue a save
 save_queued = False #Store save queued state
 save_queued_frame = frame_empty #Store queued frame
@@ -217,8 +192,7 @@ def save_queue(frame): #Queue Save
 #Save now. Only call from within the loop!
 def save_now(frame):
     global save_queued
-    filename = SAVE_PATH + "/" + SAVE_PREFIX + datetime() + SAVE_SUFFIX# + "." + SAVE_FILEFORMAT
-    save_rawfile(frame, filename)
+    filename = SAVE_PATH + "/" + SAVE_PREFIX + datetime() + SAVE_SUFFIX + "." + SAVE_FILEFORMAT
     color_theme(COLOR_BG, COLOR_FG)
     update_view(frame)
     if SAVE_TEMP_ALARM_VISIBLE and alarm_state:
@@ -226,9 +200,9 @@ def save_now(frame):
     else:
         color_theme(COLOR_FG, COLOR_BG)
     update_view(frame)
-    plt.savefig(filename + "." + SAVE_FILEFORMAT, format = SAVE_FILEFORMAT)
+    plt.savefig(filename, format = SAVE_FILEFORMAT)
     if PRINT_SAVE:
-        print("Saved " + filename + "." + SAVE_FILEFORMAT)
+        print("Saved " + filename)
     if alarm_state:
         color_theme(COLOR_BG, COLOR_TEMP_ALARM)
     save_queued = False
@@ -377,33 +351,19 @@ color_theme(COLOR_FG, COLOR_BG)
 #Update view
 def update_view(array):
         therm1.set_data(array) #update view
-        
-        temp_min = np.min(array)
-        temp_max = np.max(array)
-        
-        if temp_range and temp_min <= temp_range_min:
-            tempbar_min = temp_range_min
-        else:
-            tempbar_min = temp_min
-            
-        if temp_range and temp_max >= temp_range_max:
-            tempbar_max = temp_range_max
-        else:
-            tempbar_max = temp_max
-        
-        therm1.set_clim(vmin = tempbar_min, vmax = tempbar_max) #set bounds
+        therm1.set_clim(vmin=np.min(array), vmax=np.max(array)) #set bounds
         
         cbar.update_normal(therm1) #update colorbar
         
         #Text above view. Max, Avg, Min
-        if not temp_range or temp_min > temp_range_min and temp_max < temp_range_max:
-            plt.title(f"Max Temp: {temp_max:.1f} °C    Avg Temp: {np.average(array):.1f} °C    Min Temp: {temp_min:.1f} °C", color=color_fg_set)
-        elif temp_min < temp_range_min and temp_max < temp_range_max:
-            plt.title(f"Max Temp: {temp_max:.1f} °C            *Min Temp: < {temp_range_min:.1f} °C  ({temp_min:.1f} °C)", color=color_fg_set)
-        elif temp_min > temp_range_min and temp_max > temp_range_max:
-            plt.title(f"*Max Temp: > {temp_range_max:.1f} °C  ({temp_max:.1f} °C)            Min Temp: {temp_min:.1f} °C", color=color_fg_set)
+        if not temp_range or temp_min >= temp_range_min and temp_max <= temp_range_max:
+            plt.title(f"Max Temp: {temp_max:.1f} °C    Avg Temp: {np.average(frame_array):.1f} °C    Min Temp: {temp_min:.1f} °C", color=color_fg_set)
+        elif temp_min < temp_range_min and temp_max <= temp_range_max:
+            plt.title(f"Max Temp: {temp_max:.1f} °C            *Min Temp: < {np.min(frame_array):.1f} °C  ({temp_min:.1f} °C)", color=color_fg_set)
+        elif temp_min >= temp_range_min and temp_max > temp_range_max:
+            plt.title(f"*Max Temp: > {np.max(frame_array):.1f} °C  ({temp_max:.1f} °C)            Min Temp: {temp_min:.1f} °C", color=color_fg_set)
         elif temp_min < temp_range_min and temp_max > temp_range_max:
-            plt.title(f"*Max Temp: > {temp_range_max:.1f} °C  ({temp_max:.1f} °C)        *Min Temp: < {temp_range_min:.1f} °C  ({temp_min:.1f} °C)", color=color_fg_set)
+            plt.title(f"*Max Temp: > {np.max(frame_array):.1f} °C  ({temp_max:.1f} °C)        *Min Temp: < {np.min(frame_array):.1f} °C  ({temp_min:.1f} °C)", color=color_fg_set)
         
         plt.pause(0.001) #required
 
@@ -418,7 +378,7 @@ if PRINT_PERFORMANCE:
     
 while True:
     try:
-        frame_array = get_frame()
+        frame_array, temp_min, temp_max = get_frame()
         
         if test_pixels: #If pixels should be tested
             temp_alarm(not measurement_points(frame_array, test_array)) #Check if alarm nets to be activated
