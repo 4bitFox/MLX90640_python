@@ -61,8 +61,8 @@ if FILE_VERSION == 1:
     EMISSIVITY_BASELINE = float(raw.get("Settings", "emissivity_baseline"))
     
     frame_array = np.array(eval(raw.get("Frame", "frame")))
-    temp_range_min = float(raw.get("Frame", "temp_min"))
-    temp_range_max = float(raw.get("Frame", "temp_max"))
+    temp_range_min = float(raw.get("Frame", "temp_range_min"))
+    temp_range_max = float(raw.get("Frame", "temp_range_max"))
     
     SENSOR_SHAPE = (np.shape(frame_array)) #resolution of frame
     
