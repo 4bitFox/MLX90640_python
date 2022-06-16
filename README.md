@@ -32,6 +32,7 @@ Modules required (pip3 install):
 - numpy
 - matplotlib
 - configparser
+
 The viever only requires:
 - numpy
 - matplotlib
