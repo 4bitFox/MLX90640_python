@@ -79,6 +79,8 @@ interpolation = str(config.get("View", "interpolation")) #none, nearest, bilinea
 fullscreen = False
 
 #Save
+SAVE_IMG = True
+SAVE_RAW = True
 SAVE_PREFIX = str(config.get("Save", "save_prefix"))
 SAVE_SUFFIX = str(config.get("Save", "save_suffix"))
 SAVE_PATH = str(config.get("Save", "save_path"))
@@ -176,9 +178,11 @@ def datetime():
 
 
 def save_rawfile(frame, filename):
+    e_comp_revert = 1 / e_comp
+    frame *= e_comp_revert #revert emissivity compensation
+    
     #Convert array to stringified list
     frame = str(tuple(frame))
-    #frame = .replace("  ,", ",").replace(" ,", ",")
     frame = frame.replace("\n", "").replace(". ", "").replace(" ", "").replace("(", "").replace(")", "").replace("array", "").replace(",", ", ") #Remove unwanted parts
     frame = "[" + frame + "]" #Add missing brackets
     
@@ -194,8 +198,8 @@ def save_rawfile(frame, filename):
     
     rawfile.add_section("Frame")
     rawfile.set("Frame", "frame", frame)
-    rawfile.set("Frame", "temp_min", str(temp_range_min))
-    rawfile.set("Frame", "temp_max", str(temp_range_max))
+    rawfile.set("Frame", "temp_range_min", str(temp_range_min))
+    rawfile.set("Frame", "temp_range_max", str(temp_range_max))
     
     #Save file
     with open(filename + ".thcam", "w") as rawfileObj:
@@ -218,19 +222,26 @@ def save_queue(frame): #Queue Save
 def save_now(frame):
     global save_queued
     filename = SAVE_PATH + "/" + SAVE_PREFIX + datetime() + SAVE_SUFFIX# + "." + SAVE_FILEFORMAT
-    save_rawfile(frame, filename)
-    color_theme(COLOR_BG, COLOR_FG)
-    update_view(frame)
-    if SAVE_TEMP_ALARM_VISIBLE and alarm_state:
-        color_theme(COLOR_BG, COLOR_TEMP_ALARM)
-    else:
-        color_theme(COLOR_FG, COLOR_BG)
-    update_view(frame)
-    plt.savefig(filename + "." + SAVE_FILEFORMAT, format = SAVE_FILEFORMAT)
-    if PRINT_SAVE:
-        print("Saved " + filename + "." + SAVE_FILEFORMAT)
-    if alarm_state:
-        color_theme(COLOR_BG, COLOR_TEMP_ALARM)
+    
+    if SAVE_IMG:
+        color_theme(COLOR_BG, COLOR_FG)
+        update_view(frame)
+        if SAVE_TEMP_ALARM_VISIBLE and alarm_state:
+            color_theme(COLOR_BG, COLOR_TEMP_ALARM)
+        else:
+            color_theme(COLOR_FG, COLOR_BG)
+        update_view(frame)
+        plt.savefig(filename + "." + SAVE_FILEFORMAT, format = SAVE_FILEFORMAT)
+        if PRINT_SAVE:
+            print("Saved " + filename + "." + SAVE_FILEFORMAT)
+        if alarm_state:
+            color_theme(COLOR_BG, COLOR_TEMP_ALARM)
+        
+    
+    if SAVE_RAW:
+        save_rawfile(frame, filename)
+        if PRINT_SAVE:
+            print("Saved " + filename + ".thcam")
     save_queued = False
 
 
@@ -428,8 +439,10 @@ while True:
             
         if save_queued: #save if queued
             save_now(save_queued_frame)
+            if not SAVE_IMG:
+                update_view(frame_array) #If image is not saved, the view still needs to be updated :)
         else:
-            update_view(frame_array) #save_now() already updates view.
+            update_view(frame_array) #save_now() already updates view (only if SAVE_IMG).
                     
         if PRINT_CLEAR:
             os.system("clear")
