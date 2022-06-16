@@ -82,7 +82,7 @@ plt.ion() #Interactive plotting
 try:
     fig,ax = plt.subplots(figsize=(12, 7)) #Subplots
     fig.canvas.manager.set_window_title(TITLE) #Window title
-    fig.canvas.manager.toolbar.hide() #Hide toolbar
+    #fig.canvas.manager.toolbar.hide() #Hide toolbar
     fig.subplots_adjust(left=SPACE_L, bottom=SPACE_B, right=SPACE_R, top=SPACE_T) #Adjust space to border
     if fullscreen:
         fig.canvas.manager.full_screen_toggle() #Fullscreen
