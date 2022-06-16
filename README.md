@@ -12,6 +12,8 @@ https://gist.github.com/justinmklam/090d92011c6b7c9510f86b4cb667be92
 
 Features:
 - Save picture
+  - Image
+  - .thcam Raw file. Can be opened with read_thcam.py
 - Load settings from config file 
   - https://github.com/4bitFox/MLX90640_python/blob/main/configs/default.ini
   - Generate new config file:
@@ -27,6 +29,10 @@ Modules required (pip3 install):
 - adafruit-circuitpython-mlx90640
 - adafruit-blinka
 - RPI.GPIO
+- numpy
+- matplotlib
+- configparser
+The viever only requires:
 - numpy
 - matplotlib
 - configparser
