@@ -1,9 +1,7 @@
 chcp 65001
-
-cd "C:\Path\to\example\dir"
-
+cd /d %~dp0
 cls
-python3 read_thcam.py %1
 
+python3 read_thcam.py %1
 
 exit
