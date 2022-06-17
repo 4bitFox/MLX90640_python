@@ -161,3 +161,5 @@ if export == True or export == "-e" or export == "-s" or export == "--export" or
     plt.savefig(export_path)
 plt.show(block=True)
 
+
+sys.exit(0)
