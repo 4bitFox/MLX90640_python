@@ -4,5 +4,6 @@ cls
 
 python3 read_thcam.py %1
 
+@echo off
 if %errorlevel% neq 0 (pause)
 exit
