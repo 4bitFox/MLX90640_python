@@ -32,6 +32,9 @@ except IndexError:
 emissivity = float(config.get("Accuracy", "emissivity")) #Emissivity
 EMISSIVITY_BASELINE = 1 #Correct sensor emissivity baseline. (Should not be necessary)
 
+button_1 = bool(config.get("Buttons", "button_1"))
+button_2 = bool(config.get("Buttons", "button_2"))
+
 #Clip temperatures
 temp_range = config.get("Temperature_Range", "range_enable") #Temperatures below and above specified values will be ignored and not shown in thermal image if enabled.
 temp_range_min = int(config.get("Temperature_Range", "range_min")) #-40 °C
@@ -167,8 +170,10 @@ def trigger_setup(pin): #Add pin to detect button press
     GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP) #Button
     GPIO.add_event_detect(pin, GPIO.FALLING, callback=trigger_callback)
 
-trigger_setup(GPIO_TRIGGER_1) #Button 1
-trigger_setup(GPIO_TRIGGER_2) #Button 2
+if button_1:
+    trigger_setup(GPIO_TRIGGER_1) #Button 1
+if button_2:
+    trigger_setup(GPIO_TRIGGER_2) #Button 2
 
 
 #Get datetime
