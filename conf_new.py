@@ -27,6 +27,9 @@ config_file.set("View", "interpolation", "gaussian #none, nearest, bilinear, bic
 config_file.add_section("Accuracy")
 config_file.set("Accuracy", "emissivity", "0.95")
 
+config_file.add_section("Buttons")
+config_file.set("Buttons", "button_1", "True")
+config_file.set("Buttons", "button_2", "False")
 
 config_file.add_section("Temperature_Range")
 config_file.set("Temperature_Range", "range_enable", "False")
