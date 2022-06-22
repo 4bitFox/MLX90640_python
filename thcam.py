@@ -91,18 +91,41 @@ SAVE_FILEFORMAT = str(config.get("Save", "save_format")) #ps, eps, pdf, pgf, png
 SAVE_TEMP_ALARM_VISIBLE = True
 
 #Console output
-PRINT_PERFORMANCE = True
+PRINT_PERFORMANCE = False
 PRINT_SAVE = True
+PRINT_BUTTON = True
 PRINT_PIXEL_TEST = False
-PRINT_DEBUG = True
+PRINT_AUTOTRIGGER = True
+PRINT_DEBUG = False
 PRINT_VALUEERROR = True
-PRINT_CLEAR = False
+PRINT_CLEAR = False #Clears console after each frame
+#printf() type labels
+PRINTF_PERFORMANCE = "PERF"
+PRINTF_SAVE = "SAVE"
+PRINTF_BUTTON = "BTTN"
+PRINTF_PIXEL_TEST = "TEST"
+PRINTF_AUTOTRIGGER = "ATRG"
+PRINTF_DEBUG = "DEBG"
+PRINTF_VALUEERROR = "VERR"
+PRINTF_OVERHEATING = "HEAT"
+
+
+
+#General################################################################
+#Get datetime
+def datetime():
+    dt = time.strftime("%Y-%m-%d_%H-%M-%S")
+    return dt
+    
+    
+def printf(type, str):
+    print("[ " + datetime() + " - " + type + " ]    " + str)
 
 
 
 #MLX90640###############################################################
 if PRINT_DEBUG:
-    print("Setting up MLX90640")
+    printf(PRINTF_DEBUG, "Setting up MLX90640")
     
 SENSOR_SHAPE = (24, 32) #resolution of Sensor
 
@@ -144,8 +167,8 @@ def autotrigger(frame_current):
     #Test pixels & save
     if measurement_points(frame_current, pixel_trigger_array):
         if not autosave_triggered:
-            if PRINT_SAVE:
-                print("Automatically saving picture...")
+            if PRINT_AUTOTRIGGER:
+                printf(PRINTF_AUTOTRIGGER, "Automatically saving picture...")
             autosave_triggered = True
             save_queue(frame_store[0])
     else:
@@ -156,15 +179,16 @@ def autotrigger(frame_current):
 
 #Save###################################################################
 if PRINT_DEBUG:
-    print("Setting up GPIO buttons")
+    printf(PRINTF_DEBUG, "Setting up GPIO buttons")
 #GPIO capture button
 def trigger_callback(pin): #called when button pressed
     try:
         save_queue(frame_array)
     except NameError: #If button is pressed to early, frame_array is not defined yet. Catch and ignore :)
         pass
-    if PRINT_DEBUG:
-        print("GPIO " + str(pin) + " Button pressed.")
+    if PRINT_BUTTON:
+        printf(PRINTF_BUTTON, "GPIO " + str(pin) + " Button pressed.")
+        
         
 def trigger_setup(pin): #Add pin to detect button press
     GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP) #Button
@@ -174,12 +198,6 @@ if button_1:
     trigger_setup(GPIO_TRIGGER_1) #Button 1
 if button_2:
     trigger_setup(GPIO_TRIGGER_2) #Button 2
-
-
-#Get datetime
-def datetime():
-    dt = time.strftime("%Y-%m-%d_%H-%M-%S")
-    return dt
 
 
 def save_rawfile(frame, filename):
@@ -238,7 +256,7 @@ def save_now(frame):
         update_view(frame)
         plt.savefig(filename + "." + SAVE_FILEFORMAT, format = SAVE_FILEFORMAT)
         if PRINT_SAVE:
-            print("Saved " + filename + "." + SAVE_FILEFORMAT)
+            printf(PRINTF_SAVE, "Saved " + filename + "." + SAVE_FILEFORMAT)
         if alarm_state:
             color_theme(COLOR_BG, COLOR_TEMP_ALARM)
         
@@ -246,7 +264,7 @@ def save_now(frame):
     if SAVE_RAW:
         save_rawfile(frame, filename)
         if PRINT_SAVE:
-            print("Saved " + filename + ".thcam")
+            printf(PRINTF_SAVE, "Saved " + filename + ".thcam")
     save_queued = False
 
 
@@ -291,7 +309,7 @@ def temp_cpu_protect():
     overheat_alert_triggered = False
     while temp >= OVERHEAT_ALERT_TEMP:
         if OVERHEAT_POWEROFF and temp >= OVERHEAT_POWEROFF_TEMP:
-            print("Too hot! " + str(temp) + "°C Powering off...")
+            printf(PRINTF_OVERHEATING, "Too hot! " + str(temp) + "°C Powering off...")
             os.system("poweroff")
             sleep(10)
             os.system("sudo poweroff")
@@ -302,7 +320,7 @@ def temp_cpu_protect():
             
         overheat_alert_triggered = True
             
-        print("Overheating! " + str(temp) + " °C")
+        printf(PRINTF_OVERHEATING, "Overheating! " + str(temp) + " °C")
         
         color_theme("black", "orange")
         update_view(frame_empty)
@@ -330,11 +348,11 @@ def temp_cpu_protect():
 def test(pixel, row, column, temp_min, temp_max):
     if pixel[row, column] > temp_min and pixel[row, column] < temp_max:
         if PRINT_PIXEL_TEST:
-            print("Pixel [" + str(row) + "][" + str(column) + "] ok.")
+            printf(PRINTF_PIXEL_TEST, "Pixel [" + str(row) + "][" + str(column) + "] ok.")
         return True
     else:
         if PRINT_PIXEL_TEST:
-            print("Pixel [" + str(row) + "][" + str(column) + "] deviating! Should be " + str(temp_min) + " °C - " + str(temp_max) + " °C . Is " + str(round(pixel[row, column], 1)) + " °C!")
+            printf(PRINTF_PIXEL_TEST, "Pixel [" + str(row) + "][" + str(column) + "] deviating! Should be " + str(temp_min) + " °C - " + str(temp_max) + " °C . Is " + str(round(pixel[row, column], 1)) + " °C!")
         return False
     
 
@@ -355,7 +373,7 @@ def measurement_points(frame_array, test_array):
 #View###################################################################
 #Set up window
 if PRINT_DEBUG:
-    print("Setting up Matplotlib")
+    printf(PRINTF_DEBUG, "Setting up Matplotlib")
 plt.ion() #Interactive plotting
 fig,ax = plt.subplots(figsize=(12, 7)) #Subplots
 fig.canvas.manager.set_window_title(TITLE) #Window title
@@ -427,7 +445,7 @@ def update_view(array):
 
 #Loop###################################################################
 if PRINT_DEBUG:
-    print("Starting loop")
+    printf(PRINTF_DEBUG, "Starting loop")
     
 if PRINT_PERFORMANCE:
     time_start = time.monotonic() #Create initial time_start var
@@ -455,9 +473,9 @@ while True:
         if PRINT_PERFORMANCE:
             time_stop = time.monotonic()
             frametime = time_stop - time_start
-            print("Frametime: " + str(round(frametime, 1)) + " s")
+            printf(PRINTF_PERFORMANCE, "Frametime: " + str(round(frametime, 1)) + " s")
             fps = 1 / frametime
-            print("Framerate: " + str(round(fps, 1)) + " fps")
+            printf(PRINTF_PERFORMANCE, "Framerate: " + str(round(fps, 1)) + " fps")
             time_start = time.monotonic()
         
         if OVERHEAT_DETECTION:
@@ -465,6 +483,6 @@ while True:
             
     except ValueError:
         if PRINT_VALUEERROR:
-            print("ValueError")
+            printf(PRINTF_VALUEERROR, "ValueError")
              
         continue # if error, try again
