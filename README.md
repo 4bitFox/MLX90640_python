@@ -38,6 +38,9 @@ The viever only requires:
 - matplotlib
 - configparser
 
+Version of Python used:
+- Python 3.9.2
+- Python 3.10
 
 Versions of modules used:
 - adafruit-circuitpython-mlx90640   1.2.9
