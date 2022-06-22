@@ -32,8 +32,8 @@ except IndexError:
 emissivity = float(config.get("Accuracy", "emissivity")) #Emissivity
 EMISSIVITY_BASELINE = 1 #Correct sensor emissivity baseline. (Should not be necessary)
 
-button_1 = bool(config.get("Buttons", "button_1"))
-button_2 = bool(config.get("Buttons", "button_2"))
+button_1 = eval(config.get("Buttons", "button_1"))
+button_2 = eval(config.get("Buttons", "button_2"))
 
 #Clip temperatures
 temp_range = config.get("Temperature_Range", "range_enable") #Temperatures below and above specified values will be ignored and not shown in thermal image if enabled.
