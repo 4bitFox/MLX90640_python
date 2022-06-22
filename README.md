@@ -1,5 +1,5 @@
 # MLX90640_python
-![THC_2022-05-05_07-33-24](https://user-images.githubusercontent.com/33175205/169257910-2e832b41-b9c4-45d0-9cfe-f5537ee1db31.png)
+![THC_2022-05-05_07-33-24](https://raw.githubusercontent.com/4bitFox/MLX90640_python/main/saves/default/THC_2022-05-05_07-33-24.png)
 
 Can be used as a thermal imager or even for monitoring.
 
