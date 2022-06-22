@@ -37,3 +37,12 @@ The viever only requires:
 - numpy
 - matplotlib
 - configparser
+
+
+Versions of modules used:
+- adafruit-circuitpython-mlx90640   1.2.9
+- adafruit-blinka                   8.0.2
+- RPi.GPIO                          0.7.1
+- numpy                             1.22.4
+- matplotlib                        3.5.2
+- configparser                      5.2.0
