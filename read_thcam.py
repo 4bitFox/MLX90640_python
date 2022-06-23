@@ -44,7 +44,7 @@ SPACE_T = 0.95
 #Appearance
 COLOR_BG = "black"
 COLOR_FG = "white"
-interpolation = "gaussian" #none, nearest, bilinear, bicubic, spline16, spline36, hanning, hamming, hermite, kaiser, quadric, catrom, gaussian, bessel, mitchell, sinc, lanczos
+
 fullscreen = False
 
 
@@ -55,10 +55,13 @@ PRINT_DEBUG = True
 
 #Read file into vars
 FILE_VERSION = float(raw.get("File", "version"))
+print("File version " + str(FILE_VERSION))
 if FILE_VERSION == 1:
     #Emissivity
     emissivity = float(raw.get("Settings", "emissivity"))
     EMISSIVITY_BASELINE = float(raw.get("Settings", "emissivity_baseline"))
+    
+    interpolation = "gaussian" #none, nearest, bilinear, bicubic, spline16, spline36, hanning, hamming, hermite, kaiser, quadric, catrom, gaussian, bessel, mitchell, sinc, lanczos
     
     frame_array = np.array(eval(raw.get("Frame", "frame")))
     temp_range_min = float(raw.get("Frame", "temp_range_min"))
@@ -68,6 +71,24 @@ if FILE_VERSION == 1:
     
     e_comp = EMISSIVITY_BASELINE / emissivity #Emissivity compensation
     frame_array *= e_comp #Correct temperature
+    
+
+elif FILE_VERSION == 1.1:
+    #Emissivity
+    emissivity = float(raw.get("Settings", "emissivity"))
+    EMISSIVITY_BASELINE = float(raw.get("Settings", "emissivity_baseline"))
+    
+    interpolation = raw.get("Settings", "interpolation") #none, nearest, bilinear, bicubic, spline16, spline36, hanning, hamming, hermite, kaiser, quadric, catrom, gaussian, bessel, mitchell, sinc, lanczos
+    
+    frame_array = np.array(eval(raw.get("Frame", "frame")))
+    temp_range_min = float(raw.get("Frame", "temp_range_min"))
+    temp_range_max = float(raw.get("Frame", "temp_range_max"))
+    
+    SENSOR_SHAPE = (np.shape(frame_array)) #resolution of frame
+    
+    e_comp = EMISSIVITY_BASELINE / emissivity #Emissivity compensation
+    frame_array *= e_comp #Correct temperature
+
 
 else:
     print("File version " + str(FILE_VERSION) + " not supported!")
@@ -160,6 +181,5 @@ if export == True or export == "-e" or export == "-s" or export == "--export" or
     print("Exporting to: " + str(export_path))
     plt.savefig(export_path)
 plt.show(block=True)
-
 
 sys.exit(0)
