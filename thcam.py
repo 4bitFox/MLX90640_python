@@ -99,6 +99,7 @@ PRINT_AUTOTRIGGER = True
 PRINT_DEBUG = False
 PRINT_VALUEERROR = True
 PRINT_CLEAR = False #Clears console after each frame
+PRINT_FORMAT = True
 #printf() type labels
 PRINTF_PERFORMANCE = "PERF"
 PRINTF_SAVE = "SAVE"
@@ -118,8 +119,13 @@ def datetime():
     return dt
     
     
-def printf(type, str):
-    print("[ " + datetime() + " - " + type + " ]    " + str)
+def printf(type, message):
+    if PRINT_FORMAT:
+        str = "[ "+ SAVE_PREFIX + datetime() + SAVE_SUFFIX + " - " + type + " ]    " + message
+    else:
+        str = message
+    
+    print(str)
 
 
 
@@ -183,11 +189,11 @@ if PRINT_DEBUG:
 #GPIO capture button
 def trigger_callback(pin): #called when button pressed
     try:
+        if PRINT_BUTTON:
+            printf(PRINTF_BUTTON, "GPIO " + str(pin) + " Button pressed.")
         save_queue(frame_array)
     except NameError: #If button is pressed to early, frame_array is not defined yet. Catch and ignore :)
         pass
-    if PRINT_BUTTON:
-        printf(PRINTF_BUTTON, "GPIO " + str(pin) + " Button pressed.")
         
         
 def trigger_setup(pin): #Add pin to detect button press
@@ -213,11 +219,12 @@ def save_rawfile(frame, filename):
     rawfile = configparser.ConfigParser(inline_comment_prefixes=" #")
     
     rawfile.add_section("File")
-    rawfile.set("File", "version", "1 #DO NOT CHANGE!") #Version of file format. Tells the viever to read the file differently, depending on what version it is.
+    rawfile.set("File", "version", "1.1 #DO NOT CHANGE!") #Version of file format. Tells the viever to read the file differently, depending on what version it is.
     
     rawfile.add_section("Settings")
     rawfile.set("Settings", "emissivity", str(emissivity))
     rawfile.set("Settings", "emissivity_baseline", str(EMISSIVITY_BASELINE))
+    rawfile.set("Settings", "interpolation", interpolation)
     
     rawfile.add_section("Frame")
     rawfile.set("Frame", "frame", frame)
