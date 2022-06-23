@@ -25,6 +25,8 @@ Features:
   - Save a picture from X frames ago.
 
 
+Sometimes, the script assumes, that you put the files into "/home/pi/thcam". If you put them in a different place, you might need to change some paths. Shouldn't be too hard :-)
+
 Modules required (pip3 install):
 - adafruit-circuitpython-mlx90640
 - adafruit-blinka
