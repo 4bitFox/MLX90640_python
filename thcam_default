@@ -1,6 +1,6 @@
 #!/bin/sh
 
 cd /home/pi/thcam
-screen -S thcam python3 thcam.py configs/default.ini
+python3 -u thcam.py configs/default.ini | tee -a thcam.log
 
 exit
