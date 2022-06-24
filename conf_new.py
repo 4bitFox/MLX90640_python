@@ -13,7 +13,7 @@ except IndexError:
 
 #config_file_name = "default"
 config_file_path = "/home/pi/thcam/configs"
-config_file_format = "ini"
+config_file_format = "conf"
 
 
 #Create Object
