@@ -1,6 +1,6 @@
 #!/bin/sh
 
-cd /home/pi/thcam
-python3 -u thcam.py configs/default.ini | tee -a thcam.log
+cd /home/pi/thcam #Change path if necessary!
+python3 -u thcam.py configs/default.conf | tee -a thcam.log
 
 exit
