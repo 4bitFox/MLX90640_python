@@ -30,7 +30,7 @@ Sometimes, the script assumes, that you put the files into "/home/pi/thcam". If 
 Modules required (pip3 install):
 - adafruit-circuitpython-mlx90640
 - adafruit-blinka
-- RPI.GPIO
+- RPi.GPIO
 - numpy
 - matplotlib
 - configparser
