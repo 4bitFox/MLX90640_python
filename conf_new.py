@@ -47,7 +47,7 @@ config_file.set("Monitor", "monitor_autotrigger_array", "[[0, 0, 10, 50], [0, 31
 
 config_file.add_section("Save")
 config_file.set("Save", "save_path", "/home/pi/thcam/saves/default")
-config_file.set("Save", "save_format", "png")
+config_file.set("Save", "save_format", "png #ps, eps, pdf, pgf, png, raw, rgba, svg, svgz, jpg, jpeg, tif, tiff")
 config_file.set("Save", "save_prefix", "THC_")
 config_file.set("Save", "save_suffix", "")
 
