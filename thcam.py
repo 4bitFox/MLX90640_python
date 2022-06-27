@@ -89,6 +89,8 @@ SAVE_SUFFIX = str(config.get("Save", "save_suffix"))
 SAVE_PATH = str(config.get("Save", "save_path"))
 SAVE_FILEFORMAT = str(config.get("Save", "save_format")) #ps, eps, pdf, pgf, png, raw, rgba, svg, svgz, jpg, jpeg, tif, tiff
 SAVE_TEMP_ALARM_VISIBLE = True
+SAVE_RAW_ROUND = True #Round array numbers
+SAVE_RAW_ROUND_DECIMALS = 2 #Number of decimal places
 
 #Console output
 PRINT_PERFORMANCE = False
@@ -209,6 +211,9 @@ if button_2:
 def save_rawfile(frame, filename):
     e_comp_revert = 1 / e_comp
     frame *= e_comp_revert #revert emissivity compensation
+    
+    if SAVE_RAW_ROUND:
+        frame = np.round(frame, decimals = SAVE_RAW_ROUND_DECIMALS)
     
     #Convert array to stringified list
     frame = str(tuple(frame))
